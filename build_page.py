@@ -238,7 +238,8 @@ _HTML = r"""<!doctype html><html lang="it"><head><meta charset="utf-8">
   <button class="reset" id="reset">↺ valori validati</button>
  </div>
  <div class="hint">Solo soglie: i parametri strutturali (MA30, lookback Mansfield) non si toccano da qui.
-  <label class="tog" style="display:inline-flex;margin-left:12px"><input id="onlyFull" type="checkbox"> mostra solo i pieni</label></div>
+  <label class="tog" style="display:inline-flex;margin-left:12px"><input id="onlyFull" type="checkbox"> solo pieni</label>
+  <label class="tog" style="display:inline-flex;margin-left:10px"><input id="showAll" type="checkbox"> mostra tutto il superset</label></div>
 </div>
 
 <div class="tabs" id="tabs"></div>
@@ -275,22 +276,30 @@ const COLS = [
   ["entry","Entry"],["stop_bot","Stop"],["risk_pct","Rischio"],["base_len","Base"],
   ["vol_ratio","Vol"],["mansfield","Mansfield"],["last_close","Ultimo"]];
 
+// filtro di vista: default = candidati "vicini" (falliscono ≤1 filtro alle soglie
+// correnti) + pieni; "solo pieni" restringe; "mostra tutto" apre l'intero superset.
+function keep(nfail){
+  if($("onlyFull").checked) return nfail===0;
+  if($("showAll").checked) return true;
+  return nfail<=1;
+}
+function tabCount(m){ return m.candidates.filter(c=>keep(evalFails(c).length)).length; }
 function marketRows(name){
   const m = DATA.markets.find(x=>x.name===name);
   let rows = m.candidates.map(c=>{const f=evalFails(c);return {...c, fnow:f, full:f.length===0};});
-  if ($("onlyFull").checked) rows = rows.filter(r=>r.full);
+  rows = rows.filter(r=>keep(r.fnow.length));
   rows.sort((a,b)=>{
+    if(a.full!==b.full) return a.full ? -1 : 1;   // i PIENI sempre in cima
     let va=a[sortKey], vb=b[sortKey];
     if(sortKey==="fnow"){va=a.fnow.length;vb=b.fnow.length;}
-    if(va<vb)return sortDir; if(va>vb)return -sortDir; return 0;
+    if(va<vb)return -sortDir; if(va>vb)return sortDir; return 0;  // numerici: -1 = decrescente
   });
   return rows;
 }
 function renderTabs(){
-  $("tabs").innerHTML = DATA.markets.map(m=>{
-    const n = m.candidates.filter(c=>!$("onlyFull").checked || evalFails(c).length===0).length;
-    return `<button class="tab ${m.name===curTab?'on':''}" data-m="${m.name}">${m.name}<span class="cnt">${n}</span></button>`;
-  }).join("");
+  $("tabs").innerHTML = DATA.markets.map(m=>
+    `<button class="tab ${m.name===curTab?'on':''}" data-m="${m.name}">${m.name}<span class="cnt">${tabCount(m)}</span></button>`
+  ).join("");
   $("tabs").querySelectorAll(".tab").forEach(b=>b.onclick=()=>{curTab=b.dataset.m;sel=null;render();});
 }
 function renderList(){
@@ -394,6 +403,7 @@ function bind(){
   $("tSector").onchange=()=>{S.reqSector=$("tSector").checked;render();};
   $("tDecline").onchange=()=>{S.reqDecline=$("tDecline").checked;render();};
   $("onlyFull").onchange=render;
+  $("showAll").onchange=render;
   $("reset").onclick=()=>{S={...D};syncLabels();render();};
 }
 curTab = (DATA.markets.find(m=>m.candidates.length)||DATA.markets[0]).name;
