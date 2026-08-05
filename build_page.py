@@ -221,6 +221,7 @@ _HTML = r"""<!doctype html><html lang="it"><head><meta charset="utf-8">
 </style></head><body>
 <h1>Screener Weinstein — <span style="color:var(--grn)">interattivo</span></h1>
 <div class="sub" id="hdr"></div>
+<div class="sub"><a href="signals.html">Storico segnali pieni &rarr;</a></div>
 
 <div class="panel">
  <h2>Soglie custom — ricalcolano pieno/quasi dal vivo</h2>

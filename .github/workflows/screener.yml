@@ -54,6 +54,21 @@ jobs:
           EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
         run: python screener.py
 
+      - name: Registra i segnali pieni (storico)
+        run: python log_signals.py
+
+      - name: Salva lo storico segnali nel repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add signals_log.json
+          if ! git diff --cached --quiet; then
+            git commit -m "storico segnali $(date +%F)"
+            git push origin HEAD:main
+          else
+            echo "nessun nuovo segnale da salvare"
+          fi
+
       - name: Costruisci la pagina interattiva
         env:
           EODHD_API_KEY: cache-only
@@ -64,6 +79,7 @@ jobs:
           mkdir -p _site
           cp output/screener_app.html _site/index.html
           cp output/screener.html _site/report.html
+          cp output/signals.html _site/signals.html
           cp output/screener.json output/screener_app_data.json _site/ 2>/dev/null || true
 
       - uses: actions/upload-pages-artifact@v3

@@ -1,0 +1,36 @@
+[
+  {
+    "ticker": "SAX.XETRA",
+    "market": "DE",
+    "signal_date": "2026-07-31",
+    "entry": 39.64,
+    "stop": 31.85,
+    "base_len": 15,
+    "mansfield": 2.1,
+    "vol_ratio": 2.78,
+    "currency": "EUR",
+    "first_logged": "2026-08-06",
+    "last_price": 40.96,
+    "pct_since": 3.3,
+    "last_data": "2026-08-04",
+    "weeks_since": 0,
+    "last_updated": "2026-08-06"
+  },
+  {
+    "ticker": "ARCAD.AS",
+    "market": "AS",
+    "signal_date": "2026-07-24",
+    "entry": 41.4,
+    "stop": 31.36,
+    "base_len": 12,
+    "mansfield": 4.3,
+    "vol_ratio": 2.38,
+    "currency": "EUR",
+    "first_logged": "2026-08-06",
+    "last_price": 43.34,
+    "pct_since": 4.7,
+    "last_data": "2026-08-04",
+    "weeks_since": 1,
+    "last_updated": "2026-08-06"
+  }
+]
