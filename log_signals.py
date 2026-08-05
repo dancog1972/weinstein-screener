@@ -29,11 +29,15 @@ import pandas as pd
 from src.config import load_config
 
 
-def _perf(root: Path, ticker: str, signal_date: str) -> dict | None:
-    """Prezzo corrente e % dalla settimana del segnale, dalla cache giornaliera.
-    entry_ref e corrente sono presi dalla STESSA serie (aggiustamento coerente),
-    così la % è il rendimento totale reale da allora."""
-    safe = ticker.replace("/", "_").replace("\\", "_")
+def _track(root: Path, e: dict) -> dict | None:
+    """Due misure DIVERSE per un segnale:
+      - pct_since: prezzo attuale vs settimana del segnale. CORRE sempre, anche se
+        lo stop era già scattato (dove sta il titolo ORA → entrata tardiva?).
+      - stop_hit / pct_at_stop: se una CHIUSURA SETTIMANALE è scesa sotto lo stop
+        iniziale (regola weekly del metodo), con quale performance IN QUEL MOMENTO
+        (congelata). È la perdita che avresti preso se fossi entrato e stoppato.
+    Confronto per RAPPORTI (return vs rischio) → invariante all'aggiustamento."""
+    safe = e["ticker"].replace("/", "_").replace("\\", "_")
     p = root / f"{safe}.parquet"
     if not p.exists():
         return None
@@ -43,12 +47,28 @@ def _perf(root: Path, ticker: str, signal_date: str) -> dict | None:
         return None
     if s.empty:
         return None
-    at = s.asof(pd.Timestamp(signal_date))     # ultimo prezzo <= settimana segnale
+    sig = pd.Timestamp(e["signal_date"])
+    at = s.asof(sig)                             # prezzo alla settimana del segnale
+    if at is None or not (at > 0):
+        return None
     cur = float(s.iloc[-1])
-    pct = None if (at is None or not (at > 0)) else (cur / float(at) - 1.0) * 100.0
-    return {"last_price": round(cur, 2),
-            "pct_since": round(pct, 1) if pct is not None else None,
-            "last_data": s.index[-1].strftime("%Y-%m-%d")}
+    out = {"last_price": round(cur, 2),
+           "pct_since": round((cur / float(at) - 1.0) * 100, 1),
+           "last_data": s.index[-1].strftime("%Y-%m-%d"),
+           "stop_hit": False, "stop_date": None, "pct_at_stop": None}
+    entry, stop = float(e.get("entry", 0)), float(e.get("stop", 0))
+    if entry > 0 and stop > 0:
+        wk = s.resample("W-FRI").last().dropna()          # chiusure settimanali
+        post = wk[wk.index > sig]                          # settimane DOPO il segnale
+        if len(post):
+            ret = post / float(at) - 1.0                   # return settimana per settimana
+            risk = stop / entry - 1.0                       # soglia stop (negativa)
+            hit = ret <= risk
+            if bool(hit.any()):
+                d = post.index[hit.values.argmax()]        # PRIMA settimana sotto lo stop
+                out.update(stop_hit=True, stop_date=d.strftime("%Y-%m-%d"),
+                           pct_at_stop=round(float(ret.loc[d]) * 100, 1))
+    return out
 
 
 def main() -> None:
@@ -87,7 +107,7 @@ def main() -> None:
 
     # aggiorna la performance di TUTTI i segnali (anche i vecchi)
     for e in log:
-        perf = _perf(root, e["ticker"], e["signal_date"])
+        perf = _track(root, e)
         if perf:
             e.update(perf)
         e["weeks_since"] = (pd.Timestamp(today) - pd.Timestamp(e["signal_date"])).days // 7
@@ -106,18 +126,23 @@ def _pct_cell(v) -> str:
     return f"<td class='n {cls}'>{v:+.1f}%</td>"
 
 
+def _row(e: dict) -> str:
+    hit = e.get("stop_hit")
+    stopcell = (f"<td class='hit'>SÌ · {e.get('stop_date','')}</td>" if hit
+                else "<td class='ok2'>no</td>")
+    atstop = _pct_cell(e.get("pct_at_stop")) if hit else "<td class='n'>–</td>"
+    return (f"<tr><td class='tk'>{e['ticker']}</td>"
+            f"<td><span class='mk'>{e['market']}</span></td>"
+            f"<td>{e['signal_date']}</td><td class='n'>{e.get('weeks_since','–')}</td>"
+            f"<td class='n'>{e['entry']:.2f}</td><td class='n stop'>{e['stop']:.2f}</td>"
+            f"{stopcell}{atstop}"
+            f"<td class='n'>{e.get('last_price','–')}</td>{_pct_cell(e.get('pct_since'))}"
+            f"<td class='n'>{e['mansfield']:.1f}</td><td>{e['currency']}</td></tr>")
+
+
 def _write_html(path: Path, log: list[dict], today: str) -> None:
-    rows = "".join(
-        f"<tr><td class='tk'>{e['ticker']}</td>"
-        f"<td><span class='mk'>{e['market']}</span></td>"
-        f"<td>{e['signal_date']}</td><td class='n'>{e.get('weeks_since','–')}</td>"
-        f"<td class='n'>{e['entry']:.2f}</td>"
-        f"<td class='n'>{e.get('last_price','–')}</td>"
-        + _pct_cell(e.get("pct_since")) +
-        f"<td class='n stop'>{e['stop']:.2f}</td>"
-        f"<td class='n'>{e['mansfield']:.1f}</td><td>{e['currency']}</td></tr>"
-        for e in log
-    ) or "<tr><td colspan='10' class='none'>Ancora nessun segnale pieno registrato.</td></tr>"
+    rows = "".join(_row(e) for e in log) or \
+        "<tr><td colspan='12' class='none'>Ancora nessun segnale pieno registrato.</td></tr>"
     html = f"""<!doctype html><meta charset="utf-8"><title>Storico segnali pieni</title>
 <style>
  body{{background:#151b21;color:#d7e0e6;font:13px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;padding:24px}}
@@ -128,6 +153,7 @@ def _write_html(path: Path, log: list[dict], today: str) -> None:
  td{{border-bottom:1px solid #222c35;padding:7px 8px}} tr:hover td{{background:#1a2128}}
  .n{{text-align:right;font-family:SF Mono,Consolas,monospace}} .tk{{font-weight:600;color:#6fe3a1}}
  .stop{{color:#d6604d}} .pos{{color:#6fe3a1}} .neg{{color:#d6604d}}
+ .hit{{color:#d6604d;font-weight:600}} .ok2{{color:#7f8c98}}
  .none{{text-align:center;color:#7f8c98;padding:24px}}
  .mk{{background:#233240;color:#8fb8d8;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}}
  .foot{{color:#7f8c98;font-size:11px;margin-top:16px;line-height:1.7}}
@@ -136,14 +162,17 @@ def _write_html(path: Path, log: list[dict], today: str) -> None:
 <div class="sub">Aggiornato {today} · {len(log)} segnali registrati · <a href="index.html">← torna allo screener</a></div>
 <table>
 <tr><th>Ticker</th><th>Mkt</th><th>Settimana segnale</th><th>Sett. fa</th><th>Entry@segnale</th>
-<th>Prezzo ora</th><th>% da allora</th><th>Stop</th><th>Mansfield</th><th>Val.</th></tr>
+<th>Stop</th><th>Stop colpito</th><th>% allo stop</th><th>Prezzo ora</th><th>% da allora</th><th>Mansfield</th><th>Val.</th></tr>
 {rows}
 </table>
 <div class="foot">
-Ogni segnale <b>pieno</b> trovato dallo screener viene registrato qui con la settimana in cui è comparso.
-<b>% da allora</b> = variazione del prezzo (aggiustato) dalla settimana del segnale a oggi: serve a
-valutare un'entrata più tardiva. Non è un portafoglio: qui non si compra né si applicano stop, è un
-<i>diario</i> dei segnali. I più recenti in cima.
+Ogni segnale <b>pieno</b> viene registrato con la settimana in cui è comparso. Due misure DIVERSE:<br>
+&bull; <b>Stop colpito</b> = una <i>chiusura settimanale</i> è scesa sotto lo stop iniziale (regola weekly del
+metodo). <b>% allo stop</b> = la performance <i>congelata</i> in quel momento (quanto avresti perso entrando
+e venendo stoppato).<br>
+&bull; <b>% da allora</b> invece CORRE sempre: dov'è il titolo ORA rispetto al segnale, anche se lo stop era
+già scattato → così vedi se dopo lo stop ha recuperato (o se non entrare affatto).<br>
+Non è un portafoglio (qui non si compra), è un <i>diario</i> dei segnali. I più recenti in cima.
 </div>"""
     path.write_text(html, encoding="utf-8")
 
