@@ -230,6 +230,7 @@ _HTML = r"""<!doctype html><html lang="it"><head><meta charset="utf-8">
   <div class="ctrl"><label>volume ≥ <b id="lVol"></b>×</label><input id="sVol" type="range" min="1" max="4" step="0.1"></div>
   <div class="ctrl"><label>Mansfield ≥ <b id="lMans"></b></label><input id="sMans" type="range" min="-5" max="20" step="0.5"></div>
   <div class="ctrl"><label>rischio ≤ <b id="lRisk"></b>%</label><input id="sRisk" type="range" min="10" max="60" step="1"></div>
+  <div class="ctrl"><label>mostra fino a <b id="lMaxF"></b> filtri falliti</label><input id="sMaxF" type="range" min="0" max="4" step="1"></div>
   <div class="togs">
    <label class="tog"><input id="tMarket" type="checkbox"> mercato Fase 2</label>
    <label class="tog"><input id="tSector" type="checkbox"> settore Fase 2</label>
@@ -238,8 +239,7 @@ _HTML = r"""<!doctype html><html lang="it"><head><meta charset="utf-8">
   <button class="reset" id="reset">↺ valori validati</button>
  </div>
  <div class="hint">Solo soglie: i parametri strutturali (MA30, lookback Mansfield) non si toccano da qui.
-  <label class="tog" style="display:inline-flex;margin-left:12px"><input id="onlyFull" type="checkbox"> solo pieni</label>
-  <label class="tog" style="display:inline-flex;margin-left:10px"><input id="showAll" type="checkbox"> mostra tutto il superset</label></div>
+  Lo slider "filtri falliti" apre il superset a gradi: <b>0</b> = solo pieni · <b>4</b> = tutto.</div>
 </div>
 
 <div class="tabs" id="tabs"></div>
@@ -250,7 +250,7 @@ _HTML = r"""<!doctype html><html lang="it"><head><meta charset="utf-8">
 <script>
 const DATA = /*DATA*/;
 const SC = DATA.stageColors, SN = DATA.stageNames, D = DATA.defaults;
-let S = {...D}, curTab = null, sel = null, sortKey = "mansfield", sortDir = -1;
+let S = {...D}, maxFail = 1, curTab = null, sel = null, sortKey = "mansfield", sortDir = -1;
 
 const $ = id => document.getElementById(id);
 document.querySelector("#hdr").innerHTML =
@@ -278,11 +278,7 @@ const COLS = [
 
 // filtro di vista: default = candidati "vicini" (falliscono ≤1 filtro alle soglie
 // correnti) + pieni; "solo pieni" restringe; "mostra tutto" apre l'intero superset.
-function keep(nfail){
-  if($("onlyFull").checked) return nfail===0;
-  if($("showAll").checked) return true;
-  return nfail<=1;
-}
+function keep(nfail){ return nfail <= maxFail; }   // 0 = solo pieni … superset_fails = tutto
 function tabCount(m){ return m.candidates.filter(c=>keep(evalFails(c).length)).length; }
 function marketRows(name){
   const m = DATA.markets.find(x=>x.name===name);
@@ -394,6 +390,7 @@ function syncLabels(){
   $("sBase").value=S.baseMin;$("sDepth").value=S.depthMax;$("sVol").value=S.volMin;
   $("sMans").value=S.mansMin;$("sRisk").value=S.riskMax;
   $("tMarket").checked=S.reqMarket;$("tSector").checked=S.reqSector;$("tDecline").checked=S.reqDecline;
+  $("lMaxF").textContent=maxFail+(maxFail===0?" (solo pieni)":maxFail>=4?" (tutto)":"");$("sMaxF").value=maxFail;
 }
 function render(){renderTabs();renderList();renderDetail();}
 function bind(){
@@ -402,9 +399,9 @@ function bind(){
   $("tMarket").onchange=()=>{S.reqMarket=$("tMarket").checked;render();};
   $("tSector").onchange=()=>{S.reqSector=$("tSector").checked;render();};
   $("tDecline").onchange=()=>{S.reqDecline=$("tDecline").checked;render();};
-  $("onlyFull").onchange=render;
-  $("showAll").onchange=render;
-  $("reset").onclick=()=>{S={...D};syncLabels();render();};
+  $("sMaxF").max = DATA.meta.superset_fails || 4;
+  $("sMaxF").oninput=()=>{maxFail=parseInt($("sMaxF").value);syncLabels();render();};
+  $("reset").onclick=()=>{S={...D};maxFail=1;syncLabels();render();};
 }
 curTab = (DATA.markets.find(m=>m.candidates.length)||DATA.markets[0]).name;
 syncLabels();bind();render();
