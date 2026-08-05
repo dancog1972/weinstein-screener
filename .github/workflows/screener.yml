@@ -76,6 +76,7 @@ jobs:
       - name: Risalva la cache dati (Release asset)
         env:
           GH_TOKEN: ${{ github.token }}
+          EODHD_API_KEY: cache-only   # pack_cache non chiama l'API: gli basta un valore
         run: |
           python pack_cache.py --out data_cache.tar.gz
           gh release upload data-cache data_cache.tar.gz --clobber \
