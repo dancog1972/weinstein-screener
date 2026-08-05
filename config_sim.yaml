@@ -1,0 +1,56 @@
+# ============================================================
+# Weinstein Bot — SIMULATORE human-vs-bot (dati sintetici)
+# 24 titoli sintetici con cicli Weinstein puliti e breakout con
+# volume vero: qui i segnali ci sono, la meccanica si può rodare.
+# La modalità cieca (default nella UI) anonimizza ticker e date.
+# ============================================================
+
+provider: synthetic
+data_dir: data
+output_dir: output
+
+universe:
+  US:
+    benchmark: SYN-BENCH
+    tickers: []            # vuoto = tutti i 24 titoli sintetici
+
+backtest:
+  start: "2000-06-01"      # periodo lungo: piu eventi da giocare
+  end:   "2018-01-01"
+  oos_split: "2009-01-01"
+  horizons_weeks: [4, 13, 26, 52]
+
+stages:
+  ma_weeks: 30
+  slope_lookback: 4
+  flat_slope: 0.005
+
+signal:
+  min_base_weeks: 8
+  max_base_depth: 0.40
+  volume_ratio_min: 1.5      # "da palestra": piu segnali per rodare la meccanica
+  mansfield_min: 0.0
+  mansfield_rising_weeks: 4
+  market_filter: false       # off nel rodaggio: aumenta gli eventi giocabili
+  sector_filter: false
+
+exits:
+  stop_buffer: 0.03
+  ma_breakdown: true
+  trailing_swing: true
+  pivot_k: 2
+  swing_buffer: 0.03
+
+portfolio:
+  initial_capital: 100000
+  risk_per_trade: 0.01
+  max_position_pct: 0.20
+  max_positions: 15
+  commission_bps: 5
+  slippage_bps: 10
+
+# --- Simulatore -------------------------------------------------
+simulator:
+  limit_weeks: 4             # validità degli ordini limite (settimane)
+                             # oltre: scadono. Se il titolo esce di Fase 2
+                             # prima, l'ordine è annullato (setup invalidato).

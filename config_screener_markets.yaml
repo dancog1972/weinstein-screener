@@ -1,0 +1,83 @@
+# ============================================================
+# MERCATI DELLO SCREENER — solo la definizione dell'universo.
+#
+# I PARAMETRI del segnale (base, volume, Mansfield, stop...) NON stanno qui:
+# li legge da config_us_liquidity.yaml, così restano in un posto solo e non
+# divergono da quelli validati dal backtest.
+#
+# Ogni mercato ha il PROPRIO benchmark: serve sia al Mansfield RS (forza
+# relativa) sia al filtro di fase (si compra solo con mercato in Fase 2).
+# ⚠️ Il benchmark deve essere NELLA STESSA VALUTA dei titoli: il Mansfield è un
+# rapporto prezzo/benchmark, e valute diverse ci infilerebbero dentro il cambio.
+# ============================================================
+markets:
+  US:
+    benchmark: SPY.US              # S&P 500 · USD
+    currency: USD
+    universe_file: data/universe_US.parquet
+    exchanges: [NASDAQ, NYSE]
+    bulk_exchange: US              # codice per l'endpoint eod-bulk-last-day
+    liquidity:
+      min_price: 5.0               # USD
+      min_volume: 200000
+      min_dollar_volume: 5000000
+      lookback_weeks: 13
+      max_volatility: null
+
+  # --- EUROZONA: stessa valuta (EUR) → STESSO benchmark (STOXX Europe 600) per
+  # tutti. Le soglie di liquidità in EUR sono condivise (mercati simili). Il campo
+  # `exchanges` filtra su `exchange_real`: il valore va CONFERMATO con
+  # `build_universe.py info --exchange <CODICE>` dopo lo screen (per XETRA era
+  # "XETRA"; per PA/MI va verificato).
+  DE:                              # Germania · XETRA
+    benchmark: EXSA.XETRA          # iShares STOXX Europe 600 · EUR
+    currency: EUR
+    universe_file: data/universe_XETRA.parquet
+    exchanges: [XETRA]
+    bulk_exchange: XETRA
+    liquidity: &eu_liq
+      # Soglie in EUR, TARATE sui dati veri: turnover mediano XETRA ~98k€/giorno
+      # (molto più sottile degli USA). 500k€/giorno (≈2,5M€/settimana) tiene
+      # DAX+MDAX+SDAX ed esclude i micro-illiquidi.
+      min_price: 5.0               # EUR
+      min_volume: 10000
+      min_dollar_volume: 2500000   # ≈500k€/giorno × 5 (in realtà EUR/settimana)
+      lookback_weeks: 13
+      max_volatility: null
+
+  FR:                              # Francia · Euronext Paris
+    benchmark: EXSA.XETRA
+    currency: EUR
+    universe_file: data/universe_PA.parquet
+    exchanges: [PA]                # ⚠ CONFERMA con `info --exchange PA`
+    bulk_exchange: PA
+    liquidity: *eu_liq
+
+  AS:                              # Paesi Bassi · Euronext Amsterdam
+    benchmark: EXSA.XETRA
+    currency: EUR
+    universe_file: data/universe_AS.parquet
+    exchanges: [AS]                # ⚠ CONFERMA con `info --exchange AS`
+    bulk_exchange: AS
+    liquidity: *eu_liq
+
+  BR:                              # Belgio · Euronext Brussels
+    benchmark: EXSA.XETRA
+    currency: EUR
+    universe_file: data/universe_BR.parquet
+    exchanges: [BR]                # ⚠ CONFERMA con `info --exchange BR`
+    bulk_exchange: BR
+    liquidity: *eu_liq
+
+  LS:                              # Portogallo · Euronext Lisbon
+    benchmark: EXSA.XETRA
+    currency: EUR
+    universe_file: data/universe_LS.parquet
+    exchanges: [LS]                # ⚠ CONFERMA con `info --exchange LS`
+    bulk_exchange: LS
+    liquidity: *eu_liq
+
+  # IT (Borsa Italiana / Milano): NON disponibile su EODHD con questo piano —
+  # exchange-symbol-list/MI dà 404 e l'exchange non è nella exchanges-list. Milano
+  # è confluita in Euronext ma EODHD non la espone qui. Disattivata finché non c'è
+  # un add-on.

@@ -1,0 +1,60 @@
+# ============================================================
+# Weinstein Bot — configurazione
+# Ogni soglia del metodo è qui: il motore legge SOLO da questo file.
+# Il report HTML incorpora questa config e permette di riesportarla
+# modificata (approccio A+B).
+# ============================================================
+
+provider: synthetic          # synthetic | eodhd  (chiave API in EODHD_API_KEY)
+data_dir: data
+output_dir: output
+
+# --- Universo -------------------------------------------------
+# In modalità 'eodhd' usare ticker in formato EODHD: AAPL.US, MC.PA, SAP.XETRA...
+universe:
+  US:
+    benchmark: SYN-BENCH     # in produzione: GSPC.INDX (S&P 500)
+    tickers: []              # vuoto = il provider synthetic genera il paniere demo
+  # EU:
+  #   benchmark: STOXX.INDX  # STOXX Europe 600
+  #   tickers: [MC.PA, OR.PA, SAP.XETRA, ASML.AS]
+
+# --- Periodo --------------------------------------------------
+backtest:
+  start: "2000-01-01"
+  end:   "2025-01-01"
+  oos_split: "2015-01-01"    # prima: in-sample; dopo: out-of-sample
+  horizons_weeks: [4, 13, 26, 52]
+
+# --- Classificazione delle fasi (dati settimanali) --------------
+stages:
+  ma_weeks: 30               # la 30-week SMA di Weinstein
+  slope_lookback: 4          # settimane su cui misurare la pendenza della MA
+  flat_slope: 0.005          # |pendenza| sotto soglia = MA "piatta"
+
+# --- Segnale di acquisto (breakout di Fase 2) -------------------
+signal:
+  min_base_weeks: 8          # durata minima della base (Fase 1)
+  max_base_depth: 0.40       # profondità massima base: (max-min)/min
+  volume_ratio_min: 2.0      # volume breakout >= 2x media 4 settimane precedenti
+  mansfield_min: 0.0         # Mansfield RS >= 0 al breakout...
+  mansfield_rising_weeks: 4  # ...e in crescita sulle ultime N settimane
+  market_filter: true        # solo se il benchmark è a sua volta in Fase 2
+  sector_filter: false       # v1: disattivo (richiede proxy settoriali)
+
+# --- Uscite -----------------------------------------------------
+exits:
+  stop_buffer: 0.03          # stop iniziale 3% sotto il breakout (o minimo base se più alto)
+  ma_breakdown: true         # esci se chiusura settimanale < MA30 in discesa
+  trailing_swing: true       # trailing "da trader" (libro): a ogni minimo di
+  pivot_k: 2                 #   pullback più alto, confermato dopo pivot_k
+  swing_buffer: 0.03         #   settimane, stop = minimo x (1 - swing_buffer)
+
+# --- Portafoglio (regole identiche per bot e umano) --------------
+portfolio:
+  initial_capital: 100000
+  risk_per_trade: 0.01       # 1% dell'equity a rischio per operazione (bot)
+  max_position_pct: 0.20     # cap: nessuna posizione oltre 20% dell'equity
+  max_positions: 15
+  commission_bps: 5          # per lato
+  slippage_bps: 10           # per lato

@@ -1,0 +1,236 @@
+# ============================================================
+# Weinstein Bot — Universo per LIQUIDITÀ (piano EODHD €19.99)
+#
+# Nessun indice, nessun dato fondamentale. L'universo è definito da una
+# REGOLA sui prezzi e volumi che già scarichi:
+#   - prezzo minimo        → esclude i penny stock (slippage proibitivo)
+#   - volume medio         → liquidità di base
+#   - turnover medio ($)   → liquidità in dollari
+#   - volatilità massima   → "variazioni contenute" (ATR% settimanale)
+#
+# Perché NON la capitalizzazione. Weinstein preferisce società di una certa
+# dimensione perché danno "buona liquidità e variazioni contenute". Ma la cap
+# è il PROXY, non l'obiettivo: la liquidità la misura il turnover, e le
+# variazioni contenute sono volatilità — entrambe calcolabili dai prezzi.
+# Usare la cap ODIERNA sulla storia passata sarebbe per giunta look-ahead:
+# selezionerebbe le small-cap del 2005 che sappiamo diventate mega-cap oggi.
+#
+# Le soglie si valutano su una finestra che finisce alla settimana PRECEDENTE:
+# anti look-ahead per costruzione. Un titolo liquido nel 2005 entra
+# nell'universo del 2005; se muore nel 2008, esce nel 2008.
+# Il survivorship bias sparisce gratis, senza pagare i Fundamentals.
+#
+# Preparazione:
+#   $env:EODHD_API_KEY = "la_tua_chiave"
+#   python build_universe.py screen --exchange US --limit 800
+#   python build_universe.py prices --from-universe data/universe_US.parquet \
+#          --start 2000-01-01 --with-sector-etfs
+#   python run.py backtest --config config_us_liquidity.yaml
+# ============================================================
+
+provider: eodhd
+data_dir: data
+output_dir: output
+
+universe:
+  US:
+    mode: liquidity
+    benchmark: SPY.US          # ETF sull'S&P 500: serie prezzi, non composizione
+    sector_map: data/sector_map_us.csv
+    tickers: []                # vuoto = letto da data/universe_US.parquet,
+                               # il file prodotto da `build_universe.py screen`.
+                               # I ticker senza prezzi in cache sono esclusi
+                               # con un avviso, non fanno fallire il run.
+    liquidity:
+      min_price: 5.0
+      min_volume: 200000
+      min_dollar_volume: 5000000
+      lookback_weeks: 13
+      max_volatility: null     # ATR settimanale / prezzo. null = DISATTIVATO.
+                               #
+                               # ATTENZIONE alla taratura. Su un universo USA
+                               # realistico l'ATR% mediano dei titoli che già
+                               # passano prezzo+volume+turnover è circa 17%,
+                               # non 4%. Soglie apparentemente ragionevoli
+                               # strozzano il funnel:
+                               #   8%  → taglia ~85% delle settimane idonee
+                               #   12% → taglia ~70%
+                               #   15% → taglia ~57%
+                               #   20% → taglia ~35%
+                               #
+                               # Parti con null (disattivato) per vedere quanti
+                               # segnali produce l'universo. Poi, se e solo se
+                               # i falsi breakout sono un problema misurabile,
+                               # attiva partendo da 0.20 e stringi. Il report
+                               # stampa la correlazione turnover↔ATR% e quante
+                               # settimane il criterio esclude in più.
+      atr_weeks: 14
+
+backtest:
+  start: "2001-06-01"
+  end:   "2024-12-31"
+  oos_split: "2013-01-01"
+  horizons_weeks: [4, 13, 26, 52]
+
+stages:
+  ma_weeks: 30
+  slope_lookback: 4
+  flat_slope: 0.005
+
+signal:
+  # min_base_weeks: Weinstein parla di basi che durano MESI. 8 settimane (2
+  # mesi) è il minimo assoluto e cattura basi immature; 12 (un trimestre) è
+  # più fedele all'idea di accumulazione matura. Scelto su base metodologica,
+  # non ottimizzato sui risultati.
+  min_base_weeks: 12
+  # max_base_depth: una base valida è relativamente STRETTA (accumulazione
+  # ordinata). 40% è molto permissivo — include strutture troppo volatili per
+  # essere vere basi. 30% è più selettivo.
+  max_base_depth: 0.30
+  # require_decline (requisito A): la base deve essere ACCUMULAZIONE DOPO UN
+  # DECLINO (Fase 4 recente), non una pausa dentro un trend rialzista.
+  require_decline: true
+  # max_risk_pct: scarterebbe i breakout dove lo stop strutturale è troppo
+  # lontano (> X% sotto l'entrata). DISATTIVATO (null): con stop strutturali su
+  # barre SETTIMANALI la distanza entry-stop supera spesso il 15%, e la soglia
+  # 0.15 collassava i segnali dell'intero universo a ~2 (killer dominante). Non
+  # è tra i parametri validati in CLAUDE.md. Riattivalo solo con una soglia
+  # tarata sulla distribuzione reale entry-stop, non a naso.
+  max_risk_pct: null
+  volume_ratio_min: 2.0
+  # mansfield_min: forza relativa minima al breakout. 0 = il titolo deve solo
+  # non essere PIÙ DEBOLE del mercato (parametro validato in CLAUDE.md). Un
+  # valore come 10 (già forte al breakout) taglia ~la metà dei segnali e non
+  # è tra i parametri validati.
+  mansfield_min: 0.0
+  mansfield_rising_weeks: 4
+  # base_volume_max_ratio: contrazione del volume DENTRO la base. Weinstein:
+  # nella base il volume si prosciuga, poi esplode al breakout. È il volume
+  # medio della base diviso quello dei ~6 mesi precedenti; <= 1.0 significa che
+  # nella base il volume NON è aumentato. Soglia metodologica (non tarata sui
+  # risultati). null = filtro disattivato.
+  base_volume_max_ratio: 1.0
+  # base_obv_min: secondo livello del filtro volume. OBV della base (volume con
+  # segno, normalizzato in [-1,1]): >= soglia = ACCUMULO (più volume sui rialzi).
+  # Un titolo senza dry-up ma in accumulo resta candidato (passa se dry-up OPPURE
+  # accumulo). 0.1 = lieve prevalenza di volume sui rialzi. null = solo dry-up.
+  base_obv_min: 0.1
+  # max_breakout_stretch: rifiuta i breakout "da notizia" — chiusure che
+  # scavalcano la resistenza con un gap eccessivo (spike da news, spesso seguiti
+  # da crollo) invece di romperla in modo ordinato. Firma: close > resistenza *
+  # (1 + soglia). Calibrato sui dati: i breakout sani chiudono 1-17% sopra la
+  # resistenza, gli spike da notizia (es. BIIB +34%) molto oltre. null = off.
+  # In automatico SCARTA; in uno scanner andrebbe solo SEGNALATO al giudizio umano.
+  max_breakout_stretch: 0.25
+  market_filter: true          # primo schermo: il mercato
+  sector_filter: true          # secondo schermo: il settore (ETF SPDR)
+
+exits:
+  # stop_mode PIVOT (strutturale): lo stop va sotto l'ultimo minimo relativo
+  # confermato prima del breakout, non a una percentuale fissa. È il metodo di
+  # Weinstein e produce stop LARGHI (il minimo precedente è spesso ben sotto
+  # l'entrata), che col rischio fisso danno posizioni più piccole — evitando
+  # sia gli stop-out prematuri da rumore sia la concentrazione eccessiva.
+  stop_mode: pivot
+  pivot_buffer: 0.02     # stop il 2% sotto il pivot (un filo di margine)
+  # Esecuzione: "next_open" (default) compra all'apertura della settimana
+  # SUCCESSIVA al segnale — ciò che potresti fare davvero vedendo il breakout
+  # a mercato chiuso. "same_close" comprerebbe alla chiusura del breakout
+  # stesso (ottimistico, look-ahead di esecuzione): usalo solo per confronto.
+  execution: next_open
+  # delisting_value: come si valuta una posizione quando il titolo delista.
+  #   "last_price" = all'ultimo prezzo noto (onesto per fusioni, OTTIMISTICO per
+  #                  i fallimenti: il piano dati non dà il motivo del delisting).
+  #   "zero"       = a 0 (pessimistico: tratta ogni delisting come fallimento).
+  # Vale per strategia E gemello: il metro deve essere lo stesso per entrambi.
+  # I fallimenti graduali sono già intercettati dal filtro di liquidità (uscita
+  # sotto i $5); questa soglia morde sui delisting IMPROVVISI da stato liquido.
+  # DEFAULT last_price (onesto-dichiarato). "zero" testato come bound pessimista
+  # (luglio 2026): la strategia scende a -0.6% CAGR / -31% DD ma resta al 1°
+  # percentile → la conclusione "nessun alpha" regge a entrambe le ipotesi.
+  delisting_value: last_price
+  # Stop valutato sulla CHIUSURA settimanale (false), non sul minimo intraweek.
+  # Perché: questo è un metodo SETTIMANALE, e valutare lo stop sul minimo di una
+  # barra settimanale è troppo aggressivo — un singolo `low` sporco (tick
+  # corrotto, visto su MDSO 2012-10-31: low 31.30 su una barra chiusa a 42.02)
+  # provoca un'USCITA FALSA mentre il trend è intatto. Sulla chiusura, lo stop
+  # scatta solo se la settimana chiude davvero sotto il livello. true = valuta
+  # sul minimo intraweek (più severo, ma esposto ai wick sporchi).
+  stop_intraweek: false
+  stop_buffer: 0.03
+  ma_breakdown: true
+  # trailing_mode: "ma30" = lo stop segue la MA30 (stop = MA30*(1-ma_trail_buffer),
+  # solo in salita) → si tiene per tutta la Fase 2 finché il prezzo non chiude
+  # sotto la media, fedele al "tenere fino alla Fase 4" di Weinstein e non fragile
+  # rispetto a QUALE pivot (problema visto su INFN/MDSO). "swing" = vecchio trailing
+  # sotto ogni pivot (più stretto). "none" = solo stop iniziale + ma_breakdown.
+  trailing_mode: ma30
+  # buffer sotto la MA30: legato all'ATR (ma_trail_atr_mult × ATR settimanale) →
+  # si adatta alla volatilità del titolo, siede sotto il rumore normale. Se null,
+  # ripiega sulla % fissa ma_trail_buffer. k=2 = due ATR settimanali sotto la MA.
+  ma_trail_atr_mult: 2.0
+  ma_trail_buffer: 0.05    # fallback % se ma_trail_atr_mult è null
+  trailing_swing: true     # usato solo se trailing_mode assente (retrocompat)
+  pivot_k: 2
+  swing_buffer: 0.03
+
+portfolio:
+  initial_capital: 100000
+  risk_per_trade: 0.01
+  max_position_pct: 0.20    # max 20% del capitale per posizione: rete di
+                            # sicurezza sopra lo stop pivot, evita che uno stop
+                            # stretto (pivot vicino all'entrata) concentri troppo
+                            # capitale su un solo titolo.
+  max_positions: 100000     # nessun tetto sul NUMERO: il vincolo è il capitale
+  # rebalance_on_signal: OPZIONE (default OFF). Se pienamente investito e arriva un
+  # nuovo segnale long, invece di saltarlo vende una fetta delle long esistenti per
+  # fare spazio. Testato (luglio 2026): il turnover extra NON ripaga (peggiora il
+  # risultato). Attivare solo per sperimentare.
+  rebalance_on_signal: false
+  commission_bps: 5
+  slippage_bps: 10
+
+# ============================================================
+# Gemello casuale: la SELEZIONE batte lo scegliere a caso?
+# A ogni settimana, invece dei segnali Weinstein, pesca titoli a caso tra
+# quelli idonei per liquidità (stesso capitale, stessi costi, stessi vincoli,
+# niente stop: esce solo quando il titolo lascia l'universo). Ripetuto su
+# n_sims semi → distribuzione. La strategia sta al 95° percentile (picking
+# eccellente) o al 50° (uguale al caso)?
+# ============================================================
+# SHORT: breakdown di Fase 4, speculari al long. Long in mercati Fase 2, short
+# in Fase 4, nello STESSO portafoglio. Se si è long e arriva un segnale short
+# sullo stesso titolo (o viceversa), si fa FLIP. Il gemello resta solo long.
+short:
+  # OPZIONE (default OFF). Testato a fondo (luglio 2026): lo short NON è redditizio
+  # sul 2001-2024 — hit rate 26-30% qualunque filtro (regime, conferma orso, volumi).
+  # In un toro ventennale i breakdown rimbalzano. Attivare solo per sperimentare.
+  enabled: false
+  # bear_confirm_weeks: si shorta solo se il mercato è in Fase 4 (orso) da almeno
+  # N settimane CONSECUTIVE. Evita di aprire short sul primo tuffo (falso orso
+  # dentro il toro): l'hit rate degli short crollava per i bear-rally. 0/1 = nessuna
+  # conferma (shorta appena il mercato tocca la Fase 4).
+  bear_confirm_weeks: 4
+  borrow_annual: 0.08    # carry annuo dello short via CFD (~8%, da Saxo: finanziamento
+                         # ~7-9%/anno in regime di tassi alti). Il PDF Saxo mostra che a
+                         # 3 mesi il finanziamento divora quasi tutto un +8%/anno lordo.
+
+random_twin:
+  enabled: true
+  n_sims: 100
+  use_market_filter: true    # stesso filtro di mercato della strategia
+  # match_exposure: cappa il gemello alla STESSA frazione investita della
+  # strategia (settimana per settimana). Toglie il confondente "chi è più sul
+  # mercato vince nel toro" e misura la SELEZIONE pura, a pari esposizione.
+  # Diagnostica (luglio 2026): strategia ~28% investita, gemello classico ~92%.
+  match_exposure: true
+  # manage_exits: dà al gemello anche gli STESSI stop della strategia (stop pivot
+  # iniziale, trailing MA30-ATR, rottura MA30). Con match_exposure + manage_exits
+  # il gemello differisce dalla strategia SOLO nella selezione → test più pulito.
+  manage_exits: true
+
+# Esperimento multi-rischio: la stessa strategia a rischi diversi.
+# Se salendo di rischio il CAGR non cresce ma il MaxDD peggiora, l'edge è
+# negativo e la leva amplifica solo le perdite.
+experiment:
+  risk_levels: [0.01, 0.02, 0.05]

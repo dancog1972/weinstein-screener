@@ -1,0 +1,187 @@
+# ============================================================
+# SIMULATORE human-vs-bot su TITOLI VERI — generato da make_play_config.py
+#
+# I titoli qui elencati sono quelli che producono segnali Weinstein reali
+# (tradeabili, gia' filtrati per liquidita'). Servono per avere una partita
+# DENSA: su titoli veri presi a caso i segnali sono rarissimi e la partita
+# resterebbe vuota. Umano e bot vedono gli STESSI segnali -> confronto equo.
+#
+# Avvio:  python play.py --config config_play_real.yaml
+#         poi apri http://localhost:8000
+# ============================================================
+provider: eodhd
+data_dir: data
+output_dir: output
+universe:
+  US:
+    mode: list
+    benchmark: SPY.US
+    tickers:
+    - AAP.US
+    - ACH.US
+    - ACIW.US
+    - AEP.US
+    - AGCO.US
+    - ALG.US
+    - ALTH.US
+    - AMPH.US
+    - ANDX.US
+    - AVG.US
+    - AWHHF.US
+    - BCR.US
+    - BF-B.US
+    - BGR.US
+    - BIO.US
+    - BLDR.US
+    - BSTE.US
+    - BX.US
+    - BXS.US
+    - CADE.US
+    - CAVM.US
+    - CCS.US
+    - CFNL.US
+    - CHEF.US
+    - CHKP.US
+    - CNA.US
+    - CODI.US
+    - COLM.US
+    - COTV.US
+    - CS.US
+    - CSGS.US
+    - CSL.US
+    - CVA.US
+    - CXT.US
+    - DIS.US
+    - DRH.US
+    - EAGLU1.US
+    - EAT.US
+    - ECL.US
+    - EEFT.US
+    - EFX.US
+    - EL.US
+    - ELN.US
+    - ENOC.US
+    - ESE.US
+    - ESRX.US
+    - EW.US
+    - EXLS.US
+    - FDS.US
+    - FIVE.US
+    - FLEX.US
+    - FSB.US
+    - GENI.US
+    - GME.US
+    - GMED.US
+    - GNCMA.US
+    - GWR.US
+    - HAR.US
+    - HCD.US
+    - HPY.US
+    - HZO.US
+    - ICOS.US
+    - IEX.US
+    - IGL.US
+    - ILPT.US
+    - INFN.US
+    - IP.US
+    - IPHS.US
+    - IRF.US
+    - IRON.US
+    - JHG.US
+    - JNY.US
+    - JOY.US
+    - JOYG.US
+    - KEP.US
+    - KEYS.US
+    - KFY.US
+    - KSS.US
+    - KTO.US
+    - LAZ.US
+    - LDOS.US
+    - LSCC.US
+    - MBFI.US
+    - MDSO.US
+    - MODN.US
+    - NPK.US
+    - NTRS.US
+    - NUVA.US
+    - OMI.US
+    - ORCL.US
+    - ORLY.US
+    - OSK.US
+    - OXY-WT.US
+    - PCTY.US
+    - PNRA.US
+    - POLY.US
+    - PRSU.US
+    - PRV.US
+    - PSDO.US
+    - QCOM.US
+    - QSFT.US
+    - QUOT.US
+    - RNG.US
+    - ROIC.US
+    - ROK.US
+    - ROVI.US
+    - RPM.US
+    - RTEC.US
+    - SEM2.US
+    - SHOO.US
+    - SPH.US
+    - STON.US
+    - TBRG.US
+    - TDC.US
+    - THG.US
+    - TLB.US
+    - TMO.US
+    - UTI.US
+backtest:
+  start: '2001-06-01'
+  end: '2024-12-31'
+  oos_split: '2013-01-01'
+  horizons_weeks:
+  - 4
+  - 13
+  - 26
+  - 52
+stages:
+  ma_weeks: 30
+  slope_lookback: 4
+  flat_slope: 0.005
+signal:
+  min_base_weeks: 12
+  max_base_depth: 0.3
+  require_decline: true
+  max_risk_pct: null
+  volume_ratio_min: 2.0
+  mansfield_min: 0.0
+  mansfield_rising_weeks: 4
+  base_volume_max_ratio: 1.0
+  base_obv_min: 0.1
+  max_breakout_stretch: 0.25
+  market_filter: true
+  sector_filter: true
+exits:
+  stop_mode: pivot
+  pivot_buffer: 0.02
+  execution: next_open
+  delisting_value: last_price
+  stop_intraweek: false
+  stop_buffer: 0.03
+  ma_breakdown: true
+  trailing_mode: ma30
+  ma_trail_atr_mult: 2.0
+  ma_trail_buffer: 0.05
+  trailing_swing: true
+  pivot_k: 2
+  swing_buffer: 0.03
+portfolio:
+  initial_capital: 100000
+  risk_per_trade: 0.01
+  max_position_pct: 0.2
+  max_positions: 100000
+  rebalance_on_signal: false
+  commission_bps: 5
+  slippage_bps: 10
+simulator:
+  limit_weeks: 4

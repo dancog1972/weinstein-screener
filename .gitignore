@@ -1,0 +1,17 @@
+# La cache dati NON sta in git: viaggia come Release asset (data_cache.tar.gz).
+/data/
+/output/
+/_cache_stage/
+/data_cache.tar.gz
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# NB: assets/plotly.min.js È committato apposta (serve a build_page per la pagina
+# autonoma). Gli universi (data/universe_*.parquet) viaggiano nel Release asset.
+
+# Claude Code: config locale, puo contenere valori/segreti
+.claude/settings.local.json

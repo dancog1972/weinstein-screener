@@ -1,0 +1,82 @@
+name: Screener settimanale
+
+# Sabato mattina (07:00 UTC): la settimana borsistica (W-FRI) è chiusa e i dati di
+# venerdì sono nel feed bulk EODHD. Lanciabile anche a mano (workflow_dispatch).
+on:
+  schedule:
+    - cron: "0 7 * * 6"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write        # per aggiornare il Release asset della cache
+  pages: write           # per pubblicare su GitHub Pages
+  id-token: write        # richiesto da deploy-pages
+
+concurrency:
+  group: screener
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Ripristina la cache dati (Release asset)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release download data-cache -p data_cache.tar.gz -O data_cache.tar.gz; then
+            tar xzf data_cache.tar.gz
+            echo "cache ripristinata"
+          else
+            echo "::warning::nessuna cache trovata — prima esecuzione? carica l'archivio iniziale (vedi DEPLOY.md)"
+          fi
+
+      - name: Aggiorna i prezzi (bulk incrementale)
+        env:
+          EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
+        run: python update_prices.py
+
+      - name: Genera lo screener (report + superset)
+        env:
+          EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
+        run: python screener.py
+
+      - name: Costruisci la pagina interattiva
+        env:
+          EODHD_API_KEY: cache-only
+        run: python build_page.py
+
+      - name: Prepara il sito
+        run: |
+          mkdir -p _site
+          cp output/screener_app.html _site/index.html
+          cp output/screener.html _site/report.html
+          cp output/screener.json output/screener_app_data.json _site/ 2>/dev/null || true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Risalva la cache dati (Release asset)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python pack_cache.py --out data_cache.tar.gz
+          gh release upload data-cache data_cache.tar.gz --clobber \
+            || gh release create data-cache data_cache.tar.gz -t "cache dati" -n "cache screener"

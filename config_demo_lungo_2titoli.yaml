@@ -1,0 +1,51 @@
+# ============================================================
+# Weinstein Bot — TEST demo EODHD, PERIODO LUNGO (~23 anni)
+# Sfrutta tutto lo storico disponibile con la chiave demo.
+# AAPL e AMZN coprono l'intero periodo (dal 2000); TSLA no
+# (quotata dal 2010), quindi contribuisce solo dalla ~2012.
+# Soglie tarate per titoli liquidi moderni (volume 1.3x, base 6 sett.).
+# ============================================================
+
+provider: eodhd
+data_dir: data
+output_dir: output
+
+universe:
+  US:
+    benchmark: VTI.US
+    tickers: [AAPL.US, AMZN.US]
+
+backtest:
+  start: "2001-06-01"        # ~1,5 anni di warm-up dopo l'inizio dati (2000)
+  end:   "2024-12-31"
+  oos_split: "2013-01-01"    # divide il periodo in due metà equilibrate
+  horizons_weeks: [4, 13, 26, 52]
+
+stages:
+  ma_weeks: 30
+  slope_lookback: 4
+  flat_slope: 0.005
+
+signal:
+  min_base_weeks: 6          # tarato (era 8): titoli moderni formano basi più brevi
+  max_base_depth: 0.40
+  volume_ratio_min: 1.3      # tarato (era 2.0): volumi moderni non raddoppiano al breakout
+  mansfield_min: 0.0
+  mansfield_rising_weeks: 4
+  market_filter: true
+  sector_filter: false
+
+exits:
+  stop_buffer: 0.03
+  ma_breakdown: true
+  trailing_swing: true
+  pivot_k: 2
+  swing_buffer: 0.03
+
+portfolio:
+  initial_capital: 100000
+  risk_per_trade: 0.01
+  max_position_pct: 0.20
+  max_positions: 15
+  commission_bps: 5
+  slippage_bps: 10

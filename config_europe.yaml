@@ -1,0 +1,59 @@
+# ============================================================
+# Weinstein Bot — Europa (STOXX 600), composizione ATTUALE
+#
+# Universo point-in-time: un titolo è comprabile SOLO nelle settimane
+# in cui era effettivamente nell'indice. I delistati restano nel campione
+# fino alla loro uscita. Questo elimina il survivorship bias.
+#
+# Prerequisiti:
+#   export EODHD_API_KEY=la_tua_chiave      (piano CON Fundamentals)
+#   python build_universe.py constituents --index GSPC.INDX
+#   python build_universe.py prices --index GSPC.INDX --start 2000-01-01
+# ============================================================
+
+provider: eodhd
+data_dir: data
+output_dir: output
+
+universe:
+  US:
+    mode: index_static      # ATTENZIONE: composizione attuale = survivorship bias
+    index: STOXX.INDX
+    benchmark: STOXX.INDX
+
+backtest:
+  start: "2001-06-01"        # ~1,5 anni di warm-up dopo l'inizio dati (2000)
+  end:   "2024-12-31"
+  oos_split: "2013-01-01"    # metà periodo: in-sample | out-of-sample
+  horizons_weeks: [4, 13, 26, 52]
+
+stages:
+  ma_weeks: 30
+  slope_lookback: 4
+  flat_slope: 0.005
+
+# Soglie di partenza: quelle del libro. Su un universo ampio i segnali
+# ci saranno; NON tararle prima di aver visto i risultati out-of-sample.
+signal:
+  min_base_weeks: 8
+  max_base_depth: 0.40
+  volume_ratio_min: 2.0
+  mansfield_min: 0.0
+  mansfield_rising_weeks: 4
+  market_filter: true        # solo se l'S&P 500 è a sua volta in Fase 2
+  sector_filter: false
+
+exits:
+  stop_buffer: 0.03
+  ma_breakdown: true
+  trailing_swing: true
+  pivot_k: 2
+  swing_buffer: 0.03
+
+portfolio:
+  initial_capital: 100000
+  risk_per_trade: 0.01
+  max_position_pct: 0.20
+  max_positions: 15          # su ~500 titoli i segnali saranno molti: il cap conta
+  commission_bps: 5
+  slippage_bps: 10

@@ -1,0 +1,52 @@
+# ============================================================
+# Weinstein Bot — TEST con chiave DEMO di EODHD
+# La chiave "demo" dà storico COMPLETO ma solo su questi ticker:
+#   AAPL.US, TSLA.US, VTI.US, AMZN.US, BTC-USD.CC, EURUSD.FOREX
+# Scopo: verificare connessione + indicatori su dati reali.
+# NON è un backtest valido (4 titoli, tutti "sopravvissuti").
+# ============================================================
+
+provider: eodhd
+data_dir: data
+output_dir: output
+
+universe:
+  US:
+    # VTI = ETF sull'intero mercato USA: è il benchmark disponibile con la demo
+    benchmark: VTI.US
+    tickers: [AAPL.US, TSLA.US, AMZN.US]
+
+backtest:
+  start: "2012-01-01"        # TSLA quota dal 2010: partiamo dal 2012 per avere warm-up
+  end:   "2024-12-31"
+  oos_split: "2020-01-01"
+  horizons_weeks: [4, 13, 26, 52]
+
+stages:
+  ma_weeks: 30
+  slope_lookback: 4
+  flat_slope: 0.005
+
+signal:
+  min_base_weeks: 8
+  max_base_depth: 0.40
+  volume_ratio_min: 2.0
+  mansfield_min: 0.0
+  mansfield_rising_weeks: 4
+  market_filter: true
+  sector_filter: false
+
+exits:
+  stop_buffer: 0.03
+  ma_breakdown: true
+  trailing_swing: true
+  pivot_k: 2
+  swing_buffer: 0.03
+
+portfolio:
+  initial_capital: 100000
+  risk_per_trade: 0.01
+  max_position_pct: 0.20
+  max_positions: 15
+  commission_bps: 5
+  slippage_bps: 10
