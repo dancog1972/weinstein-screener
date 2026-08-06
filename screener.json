@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-08-06 14:43",
+    "generated": "2026-08-06 22:27",
     "markets": [
       {
         "name": "US",
@@ -9,7 +9,7 @@
         "stage": 2,
         "stage_name": "Advance",
         "universe": 5856,
-        "skipped": 1401,
+        "skipped": 1400,
         "data_through": "2026-08-07"
       },
       {
