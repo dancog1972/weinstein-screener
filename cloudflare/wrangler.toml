@@ -8,3 +8,7 @@ compatibility_date = "2024-11-01"
 binding = "DB"                 # nel Worker è env.DB
 database_name = "weinstein-watch"
 database_id = "f5b3fb82-d259-4a09-9238-6f9ff6c54dcc"
+
+[vars]
+# URL del sito (per i link nel messaggio di benvenuto). Non è un segreto.
+SITE_URL = "https://dancog1972.github.io/weinstein-screener"

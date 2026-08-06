@@ -35,6 +35,19 @@ def _watchlist_count() -> int | None:
         return None
 
 
+def _subscribers() -> list[str]:
+    """chat_id degli iscritti al recap (dal Worker). Vuoto se non configurato."""
+    url, secret = os.environ.get("WATCH_URL"), os.environ.get("WATCH_SECRET")
+    if not url or not secret:
+        return []
+    try:
+        r = requests.get(f"{url.rstrip('/')}/subscribers", params={"secret": secret}, timeout=15)
+        r.raise_for_status()
+        return [str(s["chat_id"]) for s in (r.json() or []) if s.get("chat_id")]
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Recap settimanale su Telegram")
     ap.add_argument("--log", default="signals_log.json")
@@ -70,15 +83,21 @@ def main() -> None:
         lines.append(f'🔎 <a href="{site}/">Screener</a>  ·  📋 <a href="{site}/signals.html">Follow-up</a>')
 
     text = "\n".join(lines)
-    try:
-        r = requests.post(
-            f"https://api.telegram.org/bot{token}/sendMessage",
-            json={"chat_id": chat, "text": text, "parse_mode": "HTML",
-                  "disable_web_page_preview": True}, timeout=20)
-        print("  [telegram] recap inviato ✓" if r.ok
-              else f"  [telegram] errore {r.status_code}: {r.text[:200]}")
-    except Exception as e:  # noqa: BLE001
-        print(f"  [telegram] invio fallito: {e}")
+    recipients = {str(chat)} | set(_subscribers())      # tu + gli iscritti (dedup)
+    ok = 0
+    for cid in recipients:
+        try:
+            r = requests.post(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                json={"chat_id": cid, "text": text, "parse_mode": "HTML",
+                      "disable_web_page_preview": True}, timeout=20)
+            if r.ok:
+                ok += 1
+            else:
+                print(f"  [telegram] {cid}: errore {r.status_code} {r.text[:120]}")
+        except Exception as e:  # noqa: BLE001
+            print(f"  [telegram] {cid}: invio fallito {e}")
+    print(f"  [telegram] recap inviato a {ok}/{len(recipients)} destinatari")
 
 
 if __name__ == "__main__":

@@ -15,3 +15,6 @@ __pycache__/
 
 # Claude Code: config locale, puo contenere valori/segreti
 .claude/settings.local.json
+
+# wrangler: cache locale (contiene account id/email) — fuori dal repo
+.wrangler/

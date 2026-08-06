@@ -13,3 +13,10 @@ CREATE TABLE IF NOT EXISTS follows (
   added_at    TEXT,
   PRIMARY KEY (ticker, signal_date)
 );
+
+-- Iscritti al recap settimanale: chi fa /start al bot Telegram.
+CREATE TABLE IF NOT EXISTS subscribers (
+  chat_id  TEXT PRIMARY KEY,
+  name     TEXT,
+  added_at TEXT
+);
