@@ -72,7 +72,7 @@ def chart_b64(df: pd.DataFrame, sig, stop: float, weeks_back: int = 208) -> str:
     ax.plot(idx, win["ma"], color="#2166ac", lw=1.5, zorder=4, label="MA30")
     base_mask = pd.Series(win["base_len"].to_numpy() > 0, index=idx)
     ax.plot(idx, win["resistance"].where(base_mask), color="#8c510a", lw=1.2,
-            ls="--", zorder=3, label="Resistenza base")
+            ls="--", zorder=3, label="Base resistance")
 
     # --- pannello VOLUMI: barre colorate come le candele + media 4 settimane ---
     vol = win["volume"].to_numpy(dtype=float)
@@ -80,7 +80,7 @@ def chart_b64(df: pd.DataFrame, sig, stop: float, weeks_back: int = 208) -> str:
     axv.bar(idx, vol, width=4.2, color=np.where(up, "#2ca25f", "#d6604d"),
             alpha=0.75, zorder=2)
     vol_avg = win["volume"].shift(1).rolling(4, min_periods=4).mean()
-    axv.plot(idx, vol_avg, color="#8c510a", lw=1.1, zorder=3, label="Media 4 sett.")
+    axv.plot(idx, vol_avg, color="#8c510a", lw=1.1, zorder=3, label="4-week average")
     # la settimana del segnale in risalto: è il volume che valida il breakout
     if sig.date in idx:
         axv.bar([sig.date], [float(win.loc[sig.date, "volume"])], width=4.2,
@@ -109,7 +109,7 @@ def chart_b64(df: pd.DataFrame, sig, stop: float, weeks_back: int = 208) -> str:
     # margine a destra: il segnale è recente (ultime settimane) e senza spazio
     # le etichette ENTRY/STOP finirebbero tagliate dal bordo
     ax.set_xlim(idx[0], idx[-1] + pd.Timedelta(weeks=16))
-    ax.set_title(f"{sig.ticker} · segnale {sig.date.date()} · ultimi 4 anni",
+    ax.set_title(f"{sig.ticker} · signal {sig.date.date()} · last 4 years",
                  fontsize=11, fontweight="bold")
     ax.grid(True, axis="y", alpha=0.2)
     ax.legend(loc="upper left", fontsize=8, framealpha=0.9)
@@ -457,16 +457,16 @@ def _write_html(path: Path, meta: dict, rows: list[dict], cfg: dict) -> None:
     """Report statico e autonomo (nessuna CDN): va bene anche su GitHub Pages."""
     # un banner per mercato: la Fase 2 abilita i long, altrimenti solo informativo
     banner = "".join(
-        (f"<div class='ok'>{m['name']} ({m['benchmark']}): <b>Fase 2</b> — il filtro consente i long "
-         f"· {m['universe']} titoli · dati al {m['data_through']}</div>"
+        (f"<div class='ok'>{m['name']} ({m['benchmark']}): <b>Stage 2</b> — the filter allows longs "
+         f"· {m['universe']} stocks · data through {m['data_through']}</div>"
          if m["stage"] == 2 else
-         f"<div class='warn'>{m['name']} ({m['benchmark']}): <b>Fase {m['stage']} — {m['stage_name']}</b> "
-         f"— fuori Fase 2, il metodo non compra · {m['universe']} titoli · dati al {m['data_through']}</div>")
+         f"<div class='warn'>{m['name']} ({m['benchmark']}): <b>Stage {m['stage']} — {m['stage_name']}</b> "
+         f"— out of Stage 2, the method doesn't buy · {m['universe']} stocks · data through {m['data_through']}</div>")
         for m in meta["markets"])
     data_through = max((m["data_through"] for m in meta["markets"]), default="—")
     universe_tot = sum(m["universe"] for m in meta["markets"])
     trs = "".join(
-        f"<tr><td>{'<span class=bp>PIENO</span>' if r['kind']=='pieno' else '<span class=bq>quasi</span>'}</td>"
+        f"<tr><td>{'<span class=bp>FULL</span>' if r['kind']=='pieno' else '<span class=bq>near</span>'}</td>"
         f"<td class='fl'>{', '.join(r['fails']) or '—'}</td>"
         f"<td><span class='mk'>{r['market']}</span></td>"
         f"<td class='tk'><a href='#c{i}'>{r['ticker']}</a></td><td>{r['date']}</td>"
@@ -477,29 +477,29 @@ def _write_html(path: Path, meta: dict, rows: list[dict], cfg: dict) -> None:
         f"<td class='n'>{r['base_len']}w</td><td class='n'>{r['base_depth_pct']:.0f}%</td>"
         f"<td class='n'>{r['vol_ratio']:.2f}×</td><td class='n'>{r['mansfield']:.1f}</td>"
         f"<td class='n'>{r['last_close']:.2f}</td></tr>"
-        for i, r in enumerate(rows)) or "<tr><td colspan='16' class='none'>Nessun candidato in questo periodo.</td></tr>"
+        for i, r in enumerate(rows)) or "<tr><td colspan='16' class='none'>No candidates in this period.</td></tr>"
 
     # una SCHEDA per candidato: grafico con entry/stop segnati + i numeri
     cards = "".join(
         f"""<div class="card" id="c{i}">
  <div class="chd"><span class="mk">{r['market']}</span><span class="tk">{r['ticker']}</span>
-  {'<span class="bp">PIENO</span>' if r['kind'] == 'pieno' else '<span class="bq">QUASI · ' + ', '.join(r['fails']) + '</span>'}
-  <span class="meta">segnale {r['date']} · {r['weeks_ago']} sett. fa · fase {r['stage']} · {r['currency']}</span></div>
- {'<img src="data:image/png;base64,' + r['chart'] + '">' if r.get('chart') else '<div class="none">grafico non disponibile</div>'}
+  {'<span class="bp">FULL</span>' if r['kind'] == 'pieno' else '<span class="bq">NEAR · ' + ', '.join(r['fails']) + '</span>'}
+  <span class="meta">signal {r['date']} · {r['weeks_ago']} wks ago · stage {r['stage']} · {r['currency']}</span></div>
+ {'<img src="data:image/png;base64,' + r['chart'] + '">' if r.get('chart') else '<div class="none">chart not available</div>'}
  <div class="kv">
   <div><b>Entry</b><span>{r['entry']:.2f}</span></div>
   <div><b>Stop</b><span class="stop">{r['stop_bot']:.2f}</span></div>
-  <div><b>Rischio</b><span>{r['risk_pct']:.1f}%</span></div>
-  <div><b>Azioni</b><span>{r['shares']}</span></div>
-  <div><b>Posizione</b><span>{r['position_eur']:,}</span></div>
+  <div><b>Risk</b><span>{r['risk_pct']:.1f}%</span></div>
+  <div><b>Shares</b><span>{r['shares']}</span></div>
+  <div><b>Position</b><span>{r['position_eur']:,}</span></div>
   <div><b>Base</b><span>{r['base_len']}w · {r['base_depth_pct']:.0f}%</span></div>
   <div><b>Volume</b><span>{r['vol_ratio']:.2f}×</span></div>
   <div><b>Mansfield</b><span>{r['mansfield']:.1f}</span></div>
-  <div><b>Ultimo</b><span>{r['last_close']:.2f}</span></div>
+  <div><b>Last</b><span>{r['last_close']:.2f}</span></div>
  </div></div>"""
         for i, r in enumerate(rows))
     s = cfg["signal"]
-    html = f"""<!doctype html><meta charset="utf-8"><title>Screener Weinstein · {meta['generated'][:10]}</title>
+    html = f"""<!doctype html><meta charset="utf-8"><title>Weinstein Screener · {meta['generated'][:10]}</title>
 <style>
  body{{background:#151b21;color:#d7e0e6;font:13px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;padding:24px}}
  h1{{font-size:19px;margin:0 0 4px}} .sub{{color:#7f8c98;font-size:12px;margin-bottom:14px}}
@@ -528,30 +528,30 @@ def _write_html(path: Path, meta: dict, rows: list[dict], cfg: dict) -> None:
  .fl{{color:#e0a458;font-size:11px}}
  .mk{{background:#233240;color:#8fb8d8;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}}
 </style>
-<h1>Screener Weinstein — candidati long</h1>
-<div class="sub">Generato {meta['generated']} · dati al <b>{data_through}</b> ·
- universo {universe_tot} titoli attivi · segnali delle ultime {meta['weeks_back']} settimane</div>
+<h1>Weinstein Screener — long candidates</h1>
+<div class="sub">Generated {meta['generated']} · data through <b>{data_through}</b> ·
+ universe {universe_tot} active stocks · signals from the last {meta['weeks_back']} weeks</div>
 {banner}
-<div class="sub"><b>{meta['full']}</b> candidati pieni (passano tutti i filtri) ·
- <b>{meta['near']}</b> quasi-candidati (falliscono max {meta['max_fails']} filtro — <i>giudichi tu</i>)</div>
+<div class="sub"><b>{meta['full']}</b> full candidates (pass all filters) ·
+ <b>{meta['near']}</b> near-candidates (fail at most {meta['max_fails']} filter — <i>your call</i>)</div>
 <table>
-<tr><th>Tipo</th><th>Filtro fallito</th><th>Mkt</th><th>Ticker</th><th>Segnale</th><th>Entry</th><th>Stop</th><th>Rischio</th><th>Stop pivot</th>
-<th>Azioni</th><th>Posizione</th><th>Base</th><th>Prof.</th><th>Vol</th><th>Mansfield</th><th>Ultimo</th></tr>
+<tr><th>Type</th><th>Failed filter</th><th>Mkt</th><th>Ticker</th><th>Signal</th><th>Entry</th><th>Stop</th><th>Risk</th><th>Pivot stop</th>
+<th>Shares</th><th>Position</th><th>Base</th><th>Depth</th><th>Vol</th><th>Mansfield</th><th>Last</th></tr>
 {trs}
 </table>
-<h2>Candidati — grafico con ingresso e stop</h2>
+<h2>Candidates — chart with entry and stop</h2>
 {cards}
 <div class="foot">
-<b>Come leggerlo.</b> <b>Entry</b> = chiusura del breakout; l'esecuzione reale va all'apertura successiva.
-<b>Stop</b> = strutturale, sotto l'ultimo minimo confermato (−{cfg['exits'].get('pivot_buffer',0.02)*100:.0f}% di buffer).
-<b>Azioni/Posizione</b> = size a rischio fisso ({cfg['portfolio']['risk_per_trade']*100:.0f}% del capitale
-di {cfg['portfolio']['initial_capital']:,}) — ricalcola sul TUO capitale.
-<b>Mansfield</b> = forza relativa vs mercato (richiesto ≥ {s['mansfield_min']:.0f} e in salita).<br>
-<b>Filtri attivi</b>: base ≥ {s['min_base_weeks']}w, profondità ≤ {s['max_base_depth']*100:.0f}%,
-volume ≥ {s['volume_ratio_min']}×, dopo un declino, contrazione volume o accumulo (OBV),
-niente breakout da notizia (&gt;{s.get('max_breakout_stretch',0)*100:.0f}% sopra la resistenza), mercato in Fase 2{
-' e settore in Fase 2 (US, ETF SPDR; i titoli EU non hanno mappa settoriale → filtro non applicato)' if meta.get('sector_active') else ' (filtro settore non attivo)'}.<br>
-<b>Ordinati per Mansfield</b> (forza relativa) decrescente. Lo screener <i>propone</i>: la selezione finale è tua.
+<b>How to read it.</b> <b>Entry</b> = breakout close; the real execution is at the next open.
+<b>Stop</b> = structural, below the last confirmed low (−{cfg['exits'].get('pivot_buffer',0.02)*100:.0f}% buffer).
+<b>Shares/Position</b> = fixed-risk size ({cfg['portfolio']['risk_per_trade']*100:.0f}% of the {cfg['portfolio']['initial_capital']:,}
+capital) — recompute on YOUR capital.
+<b>Mansfield</b> = relative strength vs market (required ≥ {s['mansfield_min']:.0f} and rising).<br>
+<b>Active filters</b>: base ≥ {s['min_base_weeks']}w, depth ≤ {s['max_base_depth']*100:.0f}%,
+volume ≥ {s['volume_ratio_min']}×, after a decline, volume contraction or accumulation (OBV),
+no news breakout (&gt;{s.get('max_breakout_stretch',0)*100:.0f}% above resistance), market in Stage 2{
+' and sector in Stage 2 (US, SPDR ETFs; EU stocks have no sector map → filter not applied)' if meta.get('sector_active') else ' (sector filter not active)'}.<br>
+<b>Sorted by Mansfield</b> (relative strength) descending. The screener <i>proposes</i>: the final selection is yours.
 </div>"""
     path.write_text(html, encoding="utf-8")
 

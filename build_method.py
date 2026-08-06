@@ -74,6 +74,7 @@ def main() -> None:
 
 def _write(path: Path, cfg: dict, ex: dict | None, chart: str | None) -> None:
     s, st, x = cfg["signal"], cfg["stages"], cfg["exits"]
+    pf = cfg["portfolio"]
     legend = "".join(
         f"<span class='chip' style='background:{color}'>&nbsp;</span> {lbl}&nbsp;&nbsp;"
         for code, (color, lbl) in STAGE_COLORS.items() if code != 0)
@@ -156,6 +157,25 @@ and enters <b>Stage 2</b> (uptrend), confirmed by volume and relative strength.<
 the close <b>breaks the resistance</b> of the base and is above the MA30 (not falling), <b>volume</b> surges,
 <b>relative strength</b> (Mansfield) is positive and rising, and <b>market + sector</b> are in Stage 2.
 "<b>Near</b>" candidates fail one or two of these filters: the screener shows them for your judgment.</p>
+
+<h2>Exit strategy</h2>
+<p>Once in, the position is managed with the <b>validated exit</b> (the same one used in the backtest, so it can't
+diverge from the method). The trade exits on whichever of these triggers first:</p>
+<ol>
+ <li><b>Initial stop</b> — below the last confirmed relative low (structural pivot), {x.get('pivot_buffer',0.02)*100:.0f}% buffer, evaluated on the <b>weekly close</b>.</li>
+ <li><b>Trailing stop on the MA30</b> — each week the stop rises to <b>MA30 − {x.get('ma_trail_atr_mult',2)}×ATR</b> (only upward), so a winner's stop climbs with the trend and locks in gains (Weinstein's "hold through Stage 2").</li>
+ <li><b>MA30 breakdown</b> — {'on' if x.get('ma_breakdown') else 'off'}: exit when the weekly close drops below a falling MA30.</li>
+</ol>
+<p>On the <a href="signals.html">follow-up</a> page each signal shows its real exit (date, price, reason) and the
+realized return, next to where the stock is now (so you can see a recovery after the stop, or a late entry).</p>
+
+<h2>Risk</h2>
+<p>The <b>Risk</b> shown on the pages is the distance from entry to the initial stop:
+<b>Risk% = (entry − stop) / entry</b> — how much you would lose if the initial stop is hit. It also drives
+<b>position sizing</b>: each trade risks a fixed <b>{pf['risk_per_trade']*100:.0f}% of capital</b>
+(of {pf['initial_capital']:,}), so <i>shares = risk_amount / (entry − stop)</i>. A wide stop → a smaller
+position; a tight stop → a larger one (capped at {pf['max_position_pct']*100:.0f}% of capital per position).
+The share/position numbers are illustrative — recompute them on your own capital.</p>
 
 <h2>Structural parameters (active values)</h2>
 <table>{params}</table>
