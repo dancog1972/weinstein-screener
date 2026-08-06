@@ -66,23 +66,23 @@ def main() -> None:
 
     lines = [f"📊 <b>Weekly Summary</b> — {today}"]
     if new:
-        lines.append(f"🟢 <b>{len(new)} nuovi segnali PIENI</b>:")
+        lines.append(f"🟢 <b>{len(new)} new FULL signals</b>:")
         for e in new[:15]:
             lines.append(f"• <b>{e['ticker']}</b> ({e.get('market','')}) · entry {e.get('entry')} · "
                          f"stop {e.get('stop')} · Mans {e.get('mansfield')}")
     else:
-        lines.append("⚪️ Nessun nuovo segnale.")
+        lines.append("⚪️ No new signals.")
 
-    recap = f"Follow-up: <b>{len(log)}</b> pieni totali"
+    recap = f"Follow-up: <b>{len(log)}</b> total full"
     if n_quasi is not None:
-        recap += f" · <b>{n_quasi}</b> quasi seguiti"
+        recap += f" · <b>{n_quasi}</b> followed near"
     lines.append(recap)
 
     site = os.environ.get("SITE_URL", "").strip().rstrip("/")
     if site:
         lines.append(f'🔎 <a href="{site}/">Screener</a> · '
                      f'📋 <a href="{site}/signals.html">Follow-up</a> · '
-                     f'📖 <a href="{site}/metodo.html">Metodo</a>')
+                     f'📖 <a href="{site}/metodo.html">Method</a>')
 
     text = "\n".join(lines)
     recipients = {str(chat)} | set(_subscribers())      # tu + gli iscritti (dedup)

@@ -82,45 +82,45 @@ def _write(path: Path, cfg: dict, ex: dict | None, chart: str | None) -> None:
         return f"<tr><td class='p'>{param}</td><td class='v'>{val}</td><td class='w'>{why}</td></tr>"
 
     params = "".join([
-        row("MA30", f"{st['ma_weeks']} settimane",
-            "la media mobile a 30 settimane che definisce le 4 fasi: sopra e in salita = toro, sotto e in discesa = orso."),
-        row("Pendenza MA", f"su {st['slope_lookback']} sett. · piatta se |pendenza| &lt; {st['flat_slope']}",
-            "distingue una MA che sale/scende da una laterale."),
-        row("Base minima", f"≥ {s['min_base_weeks']} settimane",
-            "l'accumulazione (Fase 1) dev'essere matura: mesi, non giorni."),
-        row("Profondità base", f"≤ {s['max_base_depth']*100:.0f}%",
-            "una base valida è stretta e ordinata, non una montagna russa."),
-        row("Volume al breakout", f"≥ {s['volume_ratio_min']}× la media 4 sett.",
-            "il breakout vero è confermato da un'esplosione di volume."),
-        row("Mansfield RS", f"≥ {s['mansfield_min']:.0f} e in salita da {s['mansfield_rising_weeks']} sett. (finestra 52 sett.)",
-            "forza relativa vs mercato: il titolo dev'essere più forte dell'indice."),
-        row("Volume nella base", f"contrazione ≤ {s.get('base_volume_max_ratio')} · oppure accumulo OBV ≥ {s.get('base_obv_min')}",
-            "nella base il volume si prosciuga (dry-up) o mostra accumulo, poi esplode."),
-        row("Anti-notizia", f"scarta se la chiusura è &gt; {s.get('max_breakout_stretch',0)*100:.0f}% sopra la resistenza",
-            "un gap enorme da notizia non è una rottura ordinata: spesso ritraccia."),
-        row("Requisito A", "la base deve seguire un declino (Fase 4)" if s.get("require_decline") else "disattivato",
-            "accumulazione DOPO una discesa, non una pausa dentro un trend."),
-        row("Filtro mercato", "Fase 2" if s.get("market_filter") else "off",
-            "primo schermo: si compra solo se l'indice è in tendenza rialzista."),
-        row("Filtro settore", "Fase 2 (ETF SPDR, US)" if s.get("sector_filter") else "off",
-            "secondo schermo: mercato → settore → titolo."),
-        row("Stop", f"pivot strutturale, buffer {x.get('pivot_buffer',0.02)*100:.0f}%, sulla CHIUSURA settimanale",
-            "sotto l'ultimo minimo relativo; valutato sulla chiusura (metodo settimanale)."),
-        row("Esecuzione", x.get("execution", "next_open"),
-            "si compra all'apertura della settimana DOPO il segnale (niente look-ahead)."),
+        row("MA30", f"{st['ma_weeks']} weeks",
+            "the 30-week moving average that defines the 4 stages: above and rising = bull, below and falling = bear."),
+        row("MA slope", f"over {st['slope_lookback']} w · flat if |slope| &lt; {st['flat_slope']}",
+            "tells a rising/falling MA from a sideways one."),
+        row("Min base", f"≥ {s['min_base_weeks']} weeks",
+            "the accumulation (Stage 1) must be mature: months, not days."),
+        row("Base depth", f"≤ {s['max_base_depth']*100:.0f}%",
+            "a valid base is tight and orderly, not a roller-coaster."),
+        row("Breakout volume", f"≥ {s['volume_ratio_min']}× the 4-week average",
+            "a real breakout is confirmed by a volume surge."),
+        row("Mansfield RS", f"≥ {s['mansfield_min']:.0f} and rising for {s['mansfield_rising_weeks']} w (52-week window)",
+            "relative strength vs market: the stock must be stronger than the index."),
+        row("Base volume", f"contraction ≤ {s.get('base_volume_max_ratio')} · or OBV accumulation ≥ {s.get('base_obv_min')}",
+            "in the base volume dries up (dry-up) or shows accumulation, then explodes."),
+        row("Anti-news", f"rejected if the close is &gt; {s.get('max_breakout_stretch',0)*100:.0f}% above resistance",
+            "a huge news gap isn't an orderly break: it often retraces."),
+        row("Requirement A", "the base must follow a decline (Stage 4)" if s.get("require_decline") else "off",
+            "accumulation AFTER a decline, not a pause inside a trend."),
+        row("Market filter", "Stage 2" if s.get("market_filter") else "off",
+            "first screen: buy only if the index is in an uptrend."),
+        row("Sector filter", "Stage 2 (SPDR ETFs, US)" if s.get("sector_filter") else "off",
+            "second screen: market → sector → stock."),
+        row("Stop", f"structural pivot, {x.get('pivot_buffer',0.02)*100:.0f}% buffer, on the weekly CLOSE",
+            "below the last relative low; evaluated on the close (weekly method)."),
+        row("Execution", x.get("execution", "next_open"),
+            "buy at the open of the week AFTER the signal (no look-ahead)."),
     ])
 
     example = ""
     if ex:
-        cap = (f"Esempio reale: <b>{ex['ticker']}</b> · segnale del {ex['signal_date']} · "
+        cap = (f"Real example: <b>{ex['ticker']}</b> · signal on {ex['signal_date']} · "
                f"entry {ex['entry']} · stop {ex['stop']}. "
-               "Sfondo colorato = fasi; tratteggio = resistenza della base; triangolo verde = ENTRY; "
-               "linea rossa = STOP; sotto, i volumi con la media a 4 settimane.")
-        example = (f"<h2>Un esempio</h2><div class='cap'>{cap}</div>"
+               "Colored background = stages; dashed line = base resistance; green triangle = ENTRY; "
+               "red line = STOP; below, volume with the 4-week average.")
+        example = (f"<h2>An example</h2><div class='cap'>{cap}</div>"
                    + (f"<img src='data:image/png;base64,{chart}'>" if chart
-                      else "<div class='none'>grafico non disponibile in questa build</div>"))
+                      else "<div class='none'>chart not available in this build</div>"))
 
-    html = f"""<!doctype html><meta charset="utf-8"><title>Il metodo · Screener Weinstein</title>
+    html = f"""<!doctype html><meta charset="utf-8"><title>The method · Weinstein Screener</title>
 <style>
  body{{background:#151b21;color:#d7e0e6;font:14px/1.65 -apple-system,Segoe UI,sans-serif;margin:0 auto;padding:26px;max-width:900px}}
  h1{{font-size:22px;margin:0 0 6px}} h2{{font-size:16px;margin:26px 0 8px;color:#6fe3a1}}
@@ -135,39 +135,39 @@ def _write(path: Path, cfg: dict, ex: dict | None, chart: str | None) -> None:
  .note{{background:#1a2128;border-left:3px solid #e0a458;padding:10px 14px;border-radius:4px;margin:16px 0;color:#c9d3da;font-size:13px}}
  ol{{padding-left:20px}} li{{margin:4px 0}}
 </style>
-<h1>Il metodo</h1>
-<div class="sub"><a href="index.html">← screener</a> · <a href="signals.html">follow-up segnali</a></div>
+<h1>The method</h1>
+<div class="sub"><a href="index.html">← screener</a> · <a href="signals.html">signals follow-up</a></div>
 
-<p>Lo screener applica l'<b>analisi di fase di Stan Weinstein</b> all'intero universo azionario
-(USA + Euronext + XETRA). L'idea: comprare quando un titolo <b>rompe al rialzo</b> una base di
-accumulazione ed entra in <b>Fase 2</b> (tendenza rialzista), con la conferma di volume e forza relativa.</p>
+<p>The screener applies <b>Stan Weinstein's stage analysis</b> to the whole stock universe
+(US + Euronext + XETRA). The idea: buy when a stock <b>breaks out</b> of an accumulation base
+and enters <b>Stage 2</b> (uptrend), confirmed by volume and relative strength.</p>
 
-<h2>Le 4 fasi</h2>
+<h2>The 4 stages</h2>
 <p>{legend}</p>
 <ol>
- <li><b>Fase 1 — Base</b>: dopo un declino, il prezzo si muove lateralmente attorno alla MA30 piatta (accumulazione).</li>
- <li><b>Fase 2 — Avanzata</b>: rottura al rialzo della base, MA30 in salita → è qui che si compra.</li>
- <li><b>Fase 3 — Top</b>: il rialzo si esaurisce, la MA30 si appiattisce (distribuzione).</li>
- <li><b>Fase 4 — Declino</b>: rottura al ribasso, MA30 in discesa → si sta fuori (o short).</li>
+ <li><b>Stage 1 — Base</b>: after a decline, price moves sideways around a flat MA30 (accumulation).</li>
+ <li><b>Stage 2 — Advance</b>: breakout above the base, MA30 rising → this is where you buy.</li>
+ <li><b>Stage 3 — Top</b>: the advance stalls, the MA30 flattens (distribution).</li>
+ <li><b>Stage 4 — Decline</b>: breakdown, MA30 falling → stay out (or short).</li>
 </ol>
 
-<h2>Come nasce un segnale</h2>
-<p>Alla chiusura settimanale, un candidato è <b>pieno</b> se: c'era una <b>base</b> matura dopo un declino,
-la chiusura <b>rompe la resistenza</b> della base ed è sopra la MA30 (non in discesa), il <b>volume</b> esplode,
-la <b>forza relativa</b> (Mansfield) è positiva e in salita, e <b>mercato + settore</b> sono in Fase 2.
-I "<b>quasi</b>" falliscono uno o due di questi filtri: lo screener li mostra per il tuo giudizio.</p>
+<h2>How a signal is born</h2>
+<p>At the weekly close, a candidate is <b>full</b> if: there was a mature <b>base</b> after a decline,
+the close <b>breaks the resistance</b> of the base and is above the MA30 (not falling), <b>volume</b> surges,
+<b>relative strength</b> (Mansfield) is positive and rising, and <b>market + sector</b> are in Stage 2.
+"<b>Near</b>" candidates fail one or two of these filters: the screener shows them for your judgment.</p>
 
-<h2>I parametri strutturali (valori attivi)</h2>
+<h2>Structural parameters (active values)</h2>
 <table>{params}</table>
 
 {example}
 
-<div class="note"><b>Onestà sui limiti.</b> Il metodo <b>non batte il mercato</b> in assoluto (resta troppo in
-cassa: è market timing). Ma la <b>selezione</b>, misurata contro un "gemello casuale" a pari esposizione e stessi
-stop, aggiunge un valore <b>modesto ma positivo</b> (~59° percentile). Il valore vero è la <b>discrezionalità</b>:
-pochi titoli scelti col giudizio, non 20.000 meccanicamente → <i>scanner + giudizio umano</i>.</div>
+<div class="note"><b>Honest about the limits.</b> The method <b>does not beat the market</b> outright (it stays too
+much in cash: it's market timing). But the <b>selection</b>, measured against a "random twin" at equal exposure and
+same stops, adds <b>modest but positive</b> value (~59th percentile). The real value is <b>discretion</b>:
+a few stocks chosen with judgment, not 20,000 mechanically → <i>scanner + human judgment</i>.</div>
 
-<div class="sub" style="margin-top:20px"><a href="index.html">← torna allo screener</a></div>"""
+<div class="sub" style="margin-top:20px"><a href="index.html">← back to screener</a></div>"""
     path.write_text(html, encoding="utf-8")
 
 

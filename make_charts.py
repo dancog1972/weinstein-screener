@@ -44,10 +44,10 @@ from src.providers import make_provider
 
 # Colori delle 4 fasi (sfondo). 0 = MA non matura, nessuno sfondo.
 STAGE_COLORS = {
-    1: ("#d9d9d9", "Fase 1 · Base"),
-    2: ("#c6e6c6", "Fase 2 · Avanzata"),
-    3: ("#f5dfa6", "Fase 3 · Top"),
-    4: ("#f2c4c4", "Fase 4 · Declino"),
+    1: ("#d9d9d9", "Stage 1 · Base"),
+    2: ("#c6e6c6", "Stage 2 · Advance"),
+    3: ("#f5dfa6", "Stage 3 · Top"),
+    4: ("#f2c4c4", "Stage 4 · Decline"),
 }
 
 
@@ -83,33 +83,33 @@ def breakout_checks(df: pd.DataFrame, market_stage: pd.Series | None,
     core = (len_prev >= 1) & (df["adj_close"] > res_prev)
 
     checks = {
-        "base troppo corta": len_prev >= sig_cfg["min_base_weeks"],
-        "base troppo profonda": depth_prev <= sig_cfg["max_base_depth"],
-        "sotto la MA30": df["adj_close"] > df["ma"],
-        "MA30 in discesa": df["ma_slope"] > -flat_slope,
-        "volume debole": df["vol_ratio"] >= sig_cfg["volume_ratio_min"],
+        "base too short": len_prev >= sig_cfg["min_base_weeks"],
+        "base too deep": depth_prev <= sig_cfg["max_base_depth"],
+        "below MA30": df["adj_close"] > df["ma"],
+        "MA30 falling": df["ma_slope"] > -flat_slope,
+        "weak volume": df["vol_ratio"] >= sig_cfg["volume_ratio_min"],
         "Mansfield < min": df["mansfield"] >= sig_cfg["mansfield_min"],
-        "Mansfield non sale": mans_rising,
+        "Mansfield not rising": mans_rising,
     }
     # filtri opzionali, allineati a detect_signals (altrimenti il grafico
     # segnerebbe come ACCETTATO un breakout che il motore invece scarta)
     if sig_cfg.get("require_decline", True) and "after_decline" in df.columns:
-        checks["base non dopo declino"] = df["after_decline"].shift(1).fillna(False)
+        checks["base not after decline"] = df["after_decline"].shift(1).fillna(False)
     bvr_max = sig_cfg.get("base_volume_max_ratio")
     obv_min = sig_cfg.get("base_obv_min")
     if bvr_max is not None and "base_vol_ratio" in df.columns:
         is_dry = ~(df["base_vol_ratio"].shift(1) > bvr_max)
         if obv_min is not None and "base_obv" in df.columns:
             # passa se dry-up OPPURE accumulo (OBV): scarto solo se NESSUNO dei due
-            checks["base né dry-up né accumulo"] = is_dry | (df["base_obv"].shift(1) >= obv_min)
+            checks["base no dry-up/accumulation"] = is_dry | (df["base_obv"].shift(1) >= obv_min)
         else:
-            checks["volume base non contratto"] = is_dry
+            checks["base volume not contracted"] = is_dry
     max_stretch = sig_cfg.get("max_breakout_stretch")
     if max_stretch is not None:
-        checks["breakout da notizia"] = ~((df["adj_close"] / res_prev - 1.0) > max_stretch)
+        checks["news-driven breakout"] = ~((df["adj_close"] / res_prev - 1.0) > max_stretch)
     if sig_cfg.get("market_filter", True) and market_stage is not None:
         ms = market_stage.reindex(df.index).ffill()
-        checks["mercato non in Fase 2"] = (ms == 2)
+        checks["market not in Stage 2"] = (ms == 2)
 
     return core.fillna(False), {k: v.fillna(False) for k, v in checks.items()}
 

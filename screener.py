@@ -38,7 +38,7 @@ from src.signals import (Signal, detect_signals, initial_stop, prepare_ticker)
 from src.stages import classify_stages
 from src.universe import LiquidityUniverse
 
-STAGE_NAME = {0: "—", 1: "Base", 2: "Avanzata", 3: "Top", 4: "Declino"}
+STAGE_NAME = {0: "—", 1: "Base", 2: "Advance", 3: "Top", 4: "Decline"}
 
 
 def chart_b64(df: pd.DataFrame, sig, stop: float, weeks_back: int = 208) -> str:
@@ -287,7 +287,7 @@ def scan_market(name: str, mspec: dict, cfg: dict, store, args,
                     continue                   # non tradeabile per liquidità
                 fails = [lbl for lbl, m in checks.items() if not bool(m.loc[d])]
                 if not _sector_ok(tk, d):
-                    fails.append("settore non in Fase 2")
+                    fails.append("sector not in Stage 2")
                 if not fails or len(fails) > args.superset_fails:
                     # 0 fail ma non è un pieno = scartato da una guardia dati o
                     # dallo stop (non un vero candidato). Oltre superset_fails =

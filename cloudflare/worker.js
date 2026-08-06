@@ -31,12 +31,12 @@ function tg(env, method, body) {
 function welcome(env) {
   const s = (env.SITE_URL || "").replace(/\/$/, "");
   const links = s
-    ? `\n\n🔎 Screener: ${s}/\n📋 Follow-up segnali: ${s}/signals.html\n📖 Il metodo: ${s}/metodo.html`
+    ? `\n\n🔎 Screener: ${s}/\n📋 Signals follow-up: ${s}/signals.html\n📖 The method: ${s}/metodo.html`
     : "";
-  return `👋 Benvenuto nello <b>Screener Weinstein</b>!\n`
-    + `Segnala i candidati <i>long</i> secondo il metodo di Stan Weinstein su USA + Europa.`
+  return `👋 Welcome to the <b>Weinstein Screener</b>!\n`
+    + `Long candidates via Stan Weinstein's method across US + Europe.`
     + links
-    + `\n\nRiceverai il <b>recap settimanale</b> ogni sabato. Scrivi /stop per disiscriverti.`;
+    + `\n\nYou'll get the <b>weekly summary</b> every Saturday. Send /stop to unsubscribe.`;
 }
 
 export default {
@@ -60,7 +60,7 @@ export default {
           await tg(env, "sendMessage", { chat_id: chat, text: welcome(env), parse_mode: "HTML", disable_web_page_preview: true });
         } else if (text.startsWith("/stop")) {
           await env.DB.prepare("DELETE FROM subscribers WHERE chat_id=?").bind(chat).run();
-          await tg(env, "sendMessage", { chat_id: chat, text: "Disiscritto dal recap settimanale. Scrivi /start per riattivarlo." });
+          await tg(env, "sendMessage", { chat_id: chat, text: "Unsubscribed from the weekly summary. Send /start to re-enable it." });
         } else {
           await tg(env, "sendMessage", { chat_id: chat, text: welcome(env), parse_mode: "HTML", disable_web_page_preview: true });
         }

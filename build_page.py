@@ -43,8 +43,8 @@ STAGE_NAME = {0: "—", 1: "Base", 2: "Avanzata", 3: "Top", 4: "Declino"}
 
 # filtri della config che NON sono controllati da slider/toggle nella pagina:
 # li teniamo com'erano al momento del run (non ricalcolabili dai soli scalari).
-_FIXED_FAILS = {"Mansfield non sale", "breakout da notizia",
-                "volume base non contratto", "base né dry-up né accumulo"}
+_FIXED_FAILS = {"Mansfield not rising", "news-driven breakout",
+                "base volume not contracted", "base no dry-up/accumulation"}
 
 
 def _finite_list(a: np.ndarray) -> list:
@@ -129,9 +129,9 @@ def main() -> None:
             c["series"] = None
         # flag ricalcolabili lato client
         f = set(c.get("fails", []))
-        c["f_market"] = "mercato non in Fase 2" in f
-        c["f_sector"] = "settore non in Fase 2" in f
-        c["f_decline"] = "base non dopo declino" in f
+        c["f_market"] = "market not in Stage 2" in f
+        c["f_sector"] = "sector not in Stage 2" in f
+        c["f_decline"] = "base not after decline" in f
         c["fixed_fails"] = sorted(f & _FIXED_FAILS)
 
     # raggruppo per mercato, nell'ordine del file mercati
@@ -172,9 +172,9 @@ def main() -> None:
     print(f"✓ Pagina: {outp}")
 
 
-_HTML = r"""<!doctype html><html lang="it"><head><meta charset="utf-8">
+_HTML = r"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Screener Weinstein — interattivo</title>
+<title>Weinstein Screener — interactive</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 <style>
  :root{--bg:#151b21;--card:#1a2128;--line:#2b353f;--fg:#d7e0e6;--mut:#7f8c98;
@@ -226,28 +226,28 @@ _HTML = r"""<!doctype html><html lang="it"><head><meta charset="utf-8">
  .kv .ok{color:var(--grn)} .kv .no{color:var(--red)}
  .hint{color:var(--mut);font-size:11px;margin-top:6px}
 </style></head><body>
-<h1>Screener Weinstein — <span style="color:var(--grn)">interattivo</span></h1>
+<h1>Weinstein Screener — <span style="color:var(--grn)">interactive</span></h1>
 <div class="sub" id="hdr"></div>
-<div class="sub"><a href="signals.html">Follow-up segnali &rarr;</a> &nbsp;·&nbsp; <a href="metodo.html">il metodo</a></div>
+<div class="sub"><a href="signals.html">Signals follow-up &rarr;</a> &nbsp;·&nbsp; <a href="metodo.html">the method</a></div>
 
 <div class="panel">
- <h2>Soglie custom — ricalcolano pieno/quasi dal vivo</h2>
+ <h2>Custom thresholds — recompute full/near live</h2>
  <div class="ctrls">
-  <div class="ctrl"><label>base ≥ <b id="lBase"></b> sett.</label><input id="sBase" type="range" min="4" max="30" step="1"></div>
-  <div class="ctrl"><label>profondità ≤ <b id="lDepth"></b>%</label><input id="sDepth" type="range" min="10" max="45" step="1"></div>
+  <div class="ctrl"><label>base ≥ <b id="lBase"></b> w</label><input id="sBase" type="range" min="4" max="30" step="1"></div>
+  <div class="ctrl"><label>depth ≤ <b id="lDepth"></b>%</label><input id="sDepth" type="range" min="10" max="45" step="1"></div>
   <div class="ctrl"><label>volume ≥ <b id="lVol"></b>×</label><input id="sVol" type="range" min="1" max="4" step="0.1"></div>
   <div class="ctrl"><label>Mansfield ≥ <b id="lMans"></b></label><input id="sMans" type="range" min="-5" max="20" step="0.5"></div>
-  <div class="ctrl"><label>rischio ≤ <b id="lRisk"></b>%</label><input id="sRisk" type="range" min="10" max="60" step="1"></div>
-  <div class="ctrl"><label>mostra fino a <b id="lMaxF"></b> filtri falliti</label><input id="sMaxF" type="range" min="0" max="4" step="1"></div>
+  <div class="ctrl"><label>risk ≤ <b id="lRisk"></b>%</label><input id="sRisk" type="range" min="10" max="60" step="1"></div>
+  <div class="ctrl"><label>show up to <b id="lMaxF"></b> failed filters</label><input id="sMaxF" type="range" min="0" max="4" step="1"></div>
   <div class="togs">
-   <label class="tog"><input id="tMarket" type="checkbox"> mercato Fase 2</label>
-   <label class="tog"><input id="tSector" type="checkbox"> settore Fase 2</label>
-   <label class="tog"><input id="tDecline" type="checkbox"> dopo declino</label>
+   <label class="tog"><input id="tMarket" type="checkbox"> market Stage 2</label>
+   <label class="tog"><input id="tSector" type="checkbox"> sector Stage 2</label>
+   <label class="tog"><input id="tDecline" type="checkbox"> after decline</label>
   </div>
-  <button class="reset" id="reset">↺ valori validati</button>
+  <button class="reset" id="reset">↺ validated values</button>
  </div>
- <div class="hint">Solo soglie: i parametri strutturali (MA30, lookback Mansfield) non si toccano da qui.
-  Lo slider "filtri falliti" apre il superset a gradi: <b>0</b> = solo pieni · <b>4</b> = tutto.</div>
+ <div class="hint">Thresholds only: structural parameters (MA30, Mansfield lookback) can't be changed here.
+  The "failed filters" slider opens the superset gradually: <b>0</b> = full only · <b>4</b> = everything.</div>
 </div>
 
 <div class="tabs" id="tabs"></div>
@@ -262,27 +262,27 @@ let S = {...D}, maxFail = 1, curTab = null, sel = null, sortKey = "mansfield", s
 
 const $ = id => document.getElementById(id);
 document.querySelector("#hdr").innerHTML =
-  `Generato ${DATA.meta.generated} · dati al <b>${DATA.meta.markets.map(m=>m.data_through).sort().slice(-1)[0]}</b>`
-  + ` · ${DATA.meta.markets.reduce((a,m)=>a+m.universe,0).toLocaleString()} titoli attivi`;
+  `Generated ${DATA.meta.generated} · data through <b>${DATA.meta.markets.map(m=>m.data_through).sort().slice(-1)[0]}</b>`
+  + ` · ${DATA.meta.markets.reduce((a,m)=>a+m.universe,0).toLocaleString()} active stocks`;
 
 // ---- valutazione client-side di un candidato contro le soglie correnti ----
 function evalFails(c){
   const f = [];
-  if (c.base_len < S.baseMin) f.push("base troppo corta");
-  if (c.base_depth_pct > S.depthMax) f.push("base troppo profonda");
-  if (c.vol_ratio < S.volMin) f.push("volume debole");
+  if (c.base_len < S.baseMin) f.push("base too short");
+  if (c.base_depth_pct > S.depthMax) f.push("base too deep");
+  if (c.vol_ratio < S.volMin) f.push("weak volume");
   if (c.mansfield < S.mansMin) f.push("Mansfield < min");
-  if (c.risk_pct > S.riskMax) f.push("rischio troppo alto");
-  if (S.reqMarket && c.f_market) f.push("mercato non in Fase 2");
-  if (S.reqSector && c.f_sector) f.push("settore non in Fase 2");
-  if (S.reqDecline && c.f_decline) f.push("base non dopo declino");
+  if (c.risk_pct > S.riskMax) f.push("risk too high");
+  if (S.reqMarket && c.f_market) f.push("market not in Stage 2");
+  if (S.reqSector && c.f_sector) f.push("sector not in Stage 2");
+  if (S.reqDecline && c.f_decline) f.push("base not after decline");
   for (const o of c.fixed_fails) f.push(o);
   return f;
 }
 const COLS = [
-  ["kind","Tipo"],["fnow","Filtro fallito"],["ticker","Ticker"],["date","Segnale"],
-  ["entry","Entry"],["stop_bot","Stop"],["risk_pct","Rischio"],["base_len","Base"],
-  ["vol_ratio","Vol"],["mansfield","Mansfield"],["last_close","Ultimo"]];
+  ["kind","Type"],["fnow","Failed filter"],["ticker","Ticker"],["date","Signal"],
+  ["entry","Entry"],["stop_bot","Stop"],["risk_pct","Risk"],["base_len","Base"],
+  ["vol_ratio","Vol"],["mansfield","Mansfield"],["last_close","Last"]];
 
 // filtro di vista: default = candidati "vicini" (falliscono ≤1 filtro alle soglie
 // correnti) + pieni; "solo pieni" restringe; "mostra tutto" apre l'intero superset.
@@ -308,14 +308,14 @@ function renderTabs(){
 }
 function renderList(){
   const m = DATA.markets.find(x=>x.name===curTab);
-  const ph = m.stage===2 ? `<b style="color:var(--grn)">Fase 2 — si compra</b>`
-                         : `<b style="color:var(--amb)">Fase ${m.stage} — ${m.stage_name}</b>`;
-  $("mktbar").innerHTML = `${m.name} · benchmark ${m.benchmark} · ${ph} · ${m.universe} titoli attivi · ${m.currency}`;
+  const ph = m.stage===2 ? `<b style="color:var(--grn)">Stage 2 — buy</b>`
+                         : `<b style="color:var(--amb)">Stage ${m.stage} — ${m.stage_name}</b>`;
+  $("mktbar").innerHTML = `${m.name} · benchmark ${m.benchmark} · ${ph} · ${m.universe} active stocks · ${m.currency}`;
   const rows = marketRows(curTab);
-  if(!rows.length){$("list").innerHTML=`<div class="none">Nessun candidato con queste soglie.</div>`;return;}
+  if(!rows.length){$("list").innerHTML=`<div class="none">No candidates with these thresholds.</div>`;return;}
   const th = COLS.map(([k,l])=>`<th data-k="${k}" class="${['entry','stop_bot','risk_pct','base_len','vol_ratio','mansfield','last_close'].includes(k)?'n':''}">${l}${sortKey===k?(sortDir<0?' ▼':' ▲'):''}</th>`).join("");
   const body = rows.map(r=>{
-    const badge = r.full?'<span class="bp">PIENO</span>':'<span class="bq">quasi</span>';
+    const badge = r.full?'<span class="bp">FULL</span>':'<span class="bq">near</span>';
     return `<tr class="row ${sel===r.ticker?'sel':''}" data-tk="${r.ticker}">
       <td>${badge}</td><td class="fl">${r.fnow.join(', ')||'—'}</td>
       <td class="tk">${r.ticker}</td><td>${r.date}</td>
@@ -333,19 +333,19 @@ function renderList(){
 function followKey(c){ return c.ticker+"|"+c.date; }
 function followSet(){ try{return JSON.parse(localStorage.getItem("followed")||"{}");}catch(e){return {};} }
 function isFollowed(c){ return !!followSet()[followKey(c)]; }
-function updateFollowBtn(c,b){ const on=isFollowed(c); b.textContent=on?"✓ seguito":"★ segui"; b.className="follow"+(on?" on":""); }
+function updateFollowBtn(c,b){ const on=isFollowed(c); b.textContent=on?"✓ following":"★ follow"; b.className="follow"+(on?" on":""); }
 async function toggleFollow(c,b){
   let secret=localStorage.getItem("watch_secret");
-  if(!secret){ secret=prompt("Segreto della watchlist (una volta sola):"); if(!secret) return; localStorage.setItem("watch_secret",secret); }
+  if(!secret){ secret=prompt("Watchlist secret (once):"); if(!secret) return; localStorage.setItem("watch_secret",secret); }
   const action=isFollowed(c)?"unfollow":"follow"; b.disabled=true; b.textContent="…";
   try{
     const r=await fetch(DATA.watch_url.replace(/\/$/,"")+"/"+action,{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({secret,ticker:c.ticker,date:c.date,market:c.market,entry:c.entry,stop:c.stop_bot,base_len:c.base_len,mansfield:c.mansfield,vol_ratio:c.vol_ratio,currency:c.currency})});
-    if(r.status===401){ alert("Segreto errato — reimpostalo."); localStorage.removeItem("watch_secret"); b.disabled=false; updateFollowBtn(c,b); return; }
+    if(r.status===401){ alert("Wrong secret — reset it."); localStorage.removeItem("watch_secret"); b.disabled=false; updateFollowBtn(c,b); return; }
     const j=await r.json();
     if(j&&j.ok){ const st=followSet(),k=followKey(c); if(j.following)st[k]=true; else delete st[k]; localStorage.setItem("followed",JSON.stringify(st)); }
-    else alert("Errore: "+((j&&j.error)||"sconosciuto"));
-  }catch(e){ alert("Errore rete: "+e); }
+    else alert("Error: "+((j&&j.error)||"unknown"));
+  }catch(e){ alert("Network error: "+e); }
   b.disabled=false; updateFollowBtn(c,b);
 }
 function renderDetail(){
@@ -354,35 +354,35 @@ function renderDetail(){
   const m = DATA.markets.find(x=>x.name===curTab);
   const c = m.candidates.find(x=>x.ticker===sel);
   const f = evalFails(c), full = f.length===0;
-  const badge = full?'<span class="bp">PIENO</span>':`<span class="bq">QUASI · ${f.join(', ')}</span>`;
+  const badge = full?'<span class="bp">FULL</span>':`<span class="bq">NEAR · ${f.join(', ')}</span>`;
   // metriche con pass/fail rispetto alle soglie correnti
   const kv = [
     ["Entry",c.entry.toFixed(2),null],
     ["Stop",c.stop_bot.toFixed(2),null],
-    ["Rischio",c.risk_pct.toFixed(1)+'%', c.risk_pct<=S.riskMax],
+    ["Risk",c.risk_pct.toFixed(1)+'%', c.risk_pct<=S.riskMax],
     ["Base",c.base_len+'w', c.base_len>=S.baseMin],
-    ["Profondità",c.base_depth_pct.toFixed(0)+'%', c.base_depth_pct<=S.depthMax],
+    ["Depth",c.base_depth_pct.toFixed(0)+'%', c.base_depth_pct<=S.depthMax],
     ["Volume",c.vol_ratio.toFixed(2)+'×', c.vol_ratio>=S.volMin],
     ["Mansfield",c.mansfield.toFixed(1), c.mansfield>=S.mansMin],
-    ["Azioni",c.shares,null],["Posizione",c.position_eur.toLocaleString(),null],
+    ["Shares",c.shares,null],["Position",c.position_eur.toLocaleString(),null],
   ].map(([k,v,ok])=>`<div class="${ok===true?'pass':ok===false?'fail':''}"><b>${k}</b>
       <span class="${ok===true?'ok':ok===false?'no':''}">${v}</span></div>`).join("");
-  const fbtn = DATA.watch_url ? `<button class="follow" id="fbtn">★ segui</button>` : "";
+  const fbtn = DATA.watch_url ? `<button class="follow" id="fbtn">★ follow</button>` : "";
   d.innerHTML = `<div class="card"><div class="chd">
      <span class="tk">${c.ticker}</span>${badge}
-     <span class="meta">segnale ${c.date} · ${c.weeks_ago} sett. fa · fase ${c.stage} · ${c.currency}</span>${fbtn}</div>
+     <span class="meta">signal ${c.date} · ${c.weeks_ago}w ago · stage ${c.stage} · ${c.currency}</span>${fbtn}</div>
      <div id="chart"></div><div class="kv">${kv}</div></div>`;
   drawChart(c);
   if(DATA.watch_url && $("fbtn")){ updateFollowBtn(c, $("fbtn")); $("fbtn").onclick=()=>toggleFollow(c, $("fbtn")); }
 }
 function drawChart(c){
   const s = c.series;
-  if(!s){$("chart").innerHTML='<div class="none">grafico non disponibile</div>';return;}
+  if(!s){$("chart").innerHTML='<div class="none">chart not available</div>';return;}
   const traces = [
     {type:"candlestick",x:s.t,open:s.o,high:s.h,low:s.l,close:s.c,name:"",
      increasing:{line:{color:"#2ca25f"}},decreasing:{line:{color:"#d6604d"}},xaxis:"x",yaxis:"y"},
     {type:"scatter",x:s.t,y:s.ma,mode:"lines",line:{color:"#2166ac",width:1.5},name:"MA30",xaxis:"x",yaxis:"y"},
-    {type:"scatter",x:s.t,y:s.res,mode:"lines",line:{color:"#8c510a",width:1.2,dash:"dash"},name:"Resistenza",xaxis:"x",yaxis:"y"},
+    {type:"scatter",x:s.t,y:s.res,mode:"lines",line:{color:"#8c510a",width:1.2,dash:"dash"},name:"Resistance",xaxis:"x",yaxis:"y"},
     {type:"bar",x:s.t,y:s.vol,marker:{color:s.c.map((c2,i)=>c2>=s.o[i]?"#2ca25f":"#d6604d"),opacity:.6},name:"volume",xaxis:"x",yaxis:"y2"},
   ];
   // fasce di fase come rettangoli di sfondo
@@ -407,7 +407,7 @@ function drawChart(c){
   const layout={paper_bgcolor:"#1a2128",plot_bgcolor:"#1a2128",font:{color:"#d7e0e6",size:11},
     margin:{l:48,r:16,t:10,b:28},showlegend:true,legend:{orientation:"h",y:1.02,x:0,font:{size:10}},
     xaxis:{domain:[0,1],rangeslider:{visible:false},gridcolor:"#222c35",anchor:"y2"},
-    yaxis:{domain:[0.26,1],gridcolor:"#222c35",title:{text:"prezzo"}},
+    yaxis:{domain:[0.26,1],gridcolor:"#222c35",title:{text:"price"}},
     yaxis2:{domain:[0,0.2],gridcolor:"#222c35",title:{text:"vol"}},
     shapes,annotations:ann,dragmode:"zoom"};
   Plotly.newPlot("chart",traces,layout,{responsive:true,displayModeBar:true,scrollZoom:true,
@@ -419,7 +419,7 @@ function syncLabels(){
   $("sBase").value=S.baseMin;$("sDepth").value=S.depthMax;$("sVol").value=S.volMin;
   $("sMans").value=S.mansMin;$("sRisk").value=S.riskMax;
   $("tMarket").checked=S.reqMarket;$("tSector").checked=S.reqSector;$("tDecline").checked=S.reqDecline;
-  $("lMaxF").textContent=maxFail+(maxFail===0?" (solo pieni)":maxFail>=4?" (tutto)":"");$("sMaxF").value=maxFail;
+  $("lMaxF").textContent=maxFail+(maxFail===0?" (full only)":maxFail>=4?" (all)":"");$("sMaxF").value=maxFail;
 }
 function render(){renderTabs();renderList();renderDetail();}
 function bind(){

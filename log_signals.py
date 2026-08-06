@@ -163,7 +163,7 @@ def _num(v, d: int = 2) -> str:
 
 def _row(e: dict) -> str:
     hit = e.get("stop_hit")
-    stopcell = (f"<td class='hit'>SÌ · {e.get('stop_date','')}</td>" if hit
+    stopcell = (f"<td class='hit'>YES ·{e.get('stop_date','')}</td>" if hit
                 else "<td class='ok2'>no</td>")
     atstop = _pct_cell(e.get("pct_at_stop")) if hit else "<td class='n'>–</td>"
     return (f"<tr><td class='tk'>{e.get('ticker','')}</td>"
@@ -175,9 +175,9 @@ def _row(e: dict) -> str:
             f"<td class='n'>{_num(e.get('mansfield'), 1)}</td><td>{e.get('currency','')}</td></tr>")
 
 
-_HEADER = ("<tr><th>Ticker</th><th>Mkt</th><th>Settimana segnale</th><th>Sett. fa</th>"
-           "<th>Entry@segnale</th><th>Stop</th><th>Stop colpito</th><th>% allo stop</th>"
-           "<th>Prezzo ora</th><th>% da allora</th><th>Mansfield</th><th>Val.</th></tr>")
+_HEADER = ("<tr><th>Ticker</th><th>Mkt</th><th>Signal week</th><th>Weeks ago</th>"
+           "<th>Entry@signal</th><th>Stop</th><th>Stop hit</th><th>% at stop</th>"
+           "<th>Price now</th><th>% since</th><th>Mansfield</th><th>Curr.</th></tr>")
 
 
 def _table(rows: list[dict], empty: str) -> str:
@@ -190,9 +190,9 @@ function pctc(v){ if(v==null) return "<td class='n'>–</td>"; const c=v>0?'pos'
 function n2(v,d){ return (typeof v==='number')?(+v).toFixed(d==null?2:d):'–'; }
 function qrow(e){
   const t=TRACKED[e.ticker+"|"+e.signal_date]||{}, hit=t.stop_hit;
-  const sc=hit?`<td class='hit'>SÌ · ${t.stop_date||''}</td>`:"<td class='ok2'>no</td>";
+  const sc=hit?`<td class='hit'>YES ·${t.stop_date||''}</td>`:"<td class='ok2'>no</td>";
   const as=hit?pctc(t.pct_at_stop):"<td class='n'>–</td>";
-  const lp=(t.last_price!=null)?t.last_price:"<i>in attesa</i>";
+  const lp=(t.last_price!=null)?t.last_price:"<i>pending</i>";
   return `<tr><td class='tk'>${e.ticker}</td><td><span class='mk'>${e.market||''}</span></td>`
     +`<td>${e.signal_date}</td><td class='n'>${t.weeks_since!=null?t.weeks_since:'–'}</td>`
     +`<td class='n'>${n2(e.entry)}</td><td class='n stop'>${n2(e.stop)}</td>${sc}${as}`
@@ -205,7 +205,7 @@ async function loadWatch(){
     const r=await fetch(WATCH_URL.replace(/\/$/,"")+"/list?secret="+encodeURIComponent(s));
     if(!r.ok) return;
     const l=await r.json(); l.sort((a,b)=>(b.signal_date||"").localeCompare(a.signal_date||""));
-    document.getElementById("quasi").innerHTML = l.length? l.map(qrow).join("") : "<tr><td colspan='12' class='none'>Nessun quasi seguito. Nello screener apri un candidato e clicca ★ segui.</td></tr>";
+    document.getElementById("quasi").innerHTML = l.length? l.map(qrow).join("") : "<tr><td colspan='12' class='none'>No followed near-misses. In the screener open a candidate and click ★ follow.</td></tr>";
     document.getElementById("qcnt").textContent=l.length;
   }catch(e){}
 }
@@ -220,9 +220,9 @@ def _write_html(path: Path, pieni: list[dict], quasi: list[dict], today: str) ->
         "pct_since": e.get("pct_since"), "stop_hit": e.get("stop_hit"),
         "stop_date": e.get("stop_date"), "pct_at_stop": e.get("pct_at_stop")} for e in quasi}
     quasi_rows = "".join(_row(e) for e in quasi) or \
-        "<tr><td colspan='12' class='none'>Nessun quasi seguito. Nello screener apri un candidato e clicca ★ segui.</td></tr>"
+        "<tr><td colspan='12' class='none'>No followed near-misses. In the screener open a candidate and click ★ follow.</td></tr>"
     script = (f"const WATCH_URL={json.dumps(watch_url)}, TRACKED={json.dumps(tracked)};\n" + _LIVE_JS)
-    html = f"""<!doctype html><meta charset="utf-8"><title>Follow-up segnali</title>
+    html = f"""<!doctype html><meta charset="utf-8"><title>Signals follow-up</title>
 <style>
  body{{background:#151b21;color:#d7e0e6;font:13px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;padding:24px}}
  h1{{font-size:19px;margin:0 0 4px}} .sub{{color:#7f8c98;font-size:12px;margin-bottom:14px}}
@@ -239,18 +239,18 @@ def _write_html(path: Path, pieni: list[dict], quasi: list[dict], today: str) ->
  .mk{{background:#233240;color:#8fb8d8;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}}
  .foot{{color:#7f8c98;font-size:11px;margin-top:18px;line-height:1.7}}
 </style>
-<h1>Follow-up segnali</h1>
-<div class="sub">Aggiornato {today} · <a href="metodo.html">il metodo</a> · <a href="index.html">← torna allo screener</a></div>
-<h2>Segnali PIENI <span class="cnt">{len(pieni)}</span> <small>automatici, dallo screener</small></h2>
-{_table(pieni, "Ancora nessun segnale pieno registrato.")}
-<h2>QUASI seguiti <span class="cnt" id="qcnt">{len(quasi)}</span> <small>tua selezione — live dalla watchlist (★ nello screener)</small></h2>
+<h1>Signals follow-up</h1>
+<div class="sub">Updated {today} · <a href="metodo.html">the method</a> · <a href="index.html">← back to screener</a></div>
+<h2>FULL signals <span class="cnt">{len(pieni)}</span> <small>automatic, from the screener</small></h2>
+{_table(pieni, "No full signals recorded yet.")}
+<h2>Followed NEAR <span class="cnt" id="qcnt">{len(quasi)}</span> <small>your picks — live from the watchlist (★ in the screener)</small></h2>
 <table>{_HEADER}<tbody id="quasi">{quasi_rows}</tbody></table>
 <div class="foot">
-Due misure per riga: <b>Stop colpito</b> / <b>% allo stop</b> = se e con che perdita una chiusura settimanale è
-scesa sotto lo stop iniziale (congelata). <b>% da allora</b> = dov'è il titolo ORA rispetto al segnale (corre
-sempre, anche dopo lo stop → utile per un'entrata tardiva). Non è un portafoglio: qui non si compra.<br>
-I PIENI si accumulano da soli. I QUASI sono <b>live</b>: appena segui un titolo nello screener compare qui
-subito (entry/stop); le performance si popolano al primo aggiornamento del job.
+Two measures per row: <b>Stop hit</b> / <b>% at stop</b> = whether, and with what loss, a weekly close dropped
+below the initial stop (frozen at that moment). <b>% since</b> = where the stock is NOW vs the signal (keeps
+running, even after the stop → useful for a late entry). This is not a portfolio: nothing is bought here.<br>
+FULL signals accumulate automatically. NEAR ones are <b>live</b>: as soon as you follow a stock in the screener
+it appears here immediately (entry/stop); the performance fills in at the next job update.
 </div>
 <script>{script}</script>"""
     path.write_text(html, encoding="utf-8")
