@@ -51,6 +51,7 @@ jobs:
 
       - name: Registra i segnali pieni + watchlist (storico)
         env:
+          EODHD_API_KEY: cache-only                 # legge solo dalla cache (prezzi già aggiornati sopra)
           WATCH_URL: ${{ secrets.WATCH_URL }}       # Worker Cloudflare (opzionale)
           WATCH_SECRET: ${{ secrets.WATCH_SECRET }}
         run: python log_signals.py
