@@ -54,7 +54,10 @@ jobs:
           EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
         run: python screener.py
 
-      - name: Registra i segnali pieni (storico)
+      - name: Registra i segnali pieni + watchlist (storico)
+        env:
+          WATCH_URL: ${{ secrets.WATCH_URL }}       # Worker Cloudflare (opzionale)
+          WATCH_SECRET: ${{ secrets.WATCH_SECRET }}
         run: python log_signals.py
 
       - name: Salva lo storico segnali nel repo
@@ -72,6 +75,7 @@ jobs:
       - name: Costruisci la pagina interattiva
         env:
           EODHD_API_KEY: cache-only
+          WATCH_URL: ${{ secrets.WATCH_URL }}       # abilita i bottoni ★ segui
         run: python build_page.py
 
       - name: Prepara il sito

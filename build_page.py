@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from datetime import date
 from pathlib import Path
 
@@ -151,6 +152,7 @@ def main() -> None:
         "reqDecline": bool(sig.get("require_decline", True)),
     }
     payload = {"meta": meta, "markets": by_market, "defaults": defaults,
+               "watch_url": os.environ.get("WATCH_URL", ""),   # Worker Cloudflare (vuoto = niente ★)
                "stageColors": {str(k): v[0] for k, v in STAGE_COLORS.items()},
                "stageNames": {str(k): v for k, v in STAGE_NAME.items()}}
 
@@ -212,6 +214,8 @@ _HTML = r"""<!doctype html><html lang="it"><head><meta charset="utf-8">
  /* scheda */
  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:14px}
  .chd{display:flex;align-items:baseline;gap:10px;margin-bottom:6px} .chd .tk{font-size:16px}
+ .follow{margin-left:auto;background:#233240;color:#8fb8d8;border:1px solid #2b353f;border-radius:5px;padding:3px 12px;cursor:pointer;font-size:12px;align-self:center}
+ .follow:hover{border-color:#6fe3a1} .follow.on{background:#16341f;color:#6fe3a1;border-color:#2f6b45}
  .chd .meta{color:var(--mut);font-size:11px}
  #chart{width:100%;height:440px}
  .kv{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -325,6 +329,25 @@ function renderList(){
     const k=h.dataset.k; if(sortKey===k)sortDir=-sortDir; else{sortKey=k;sortDir=(k==='ticker'||k==='date')?1:-1;} render();});
   $("list").querySelectorAll("tr.row").forEach(tr=>tr.onclick=()=>{sel=tr.dataset.tk;render();});
 }
+// --- watchlist: seguire/smettere di seguire un candidato (POST al Worker) ---
+function followKey(c){ return c.ticker+"|"+c.date; }
+function followSet(){ try{return JSON.parse(localStorage.getItem("followed")||"{}");}catch(e){return {};} }
+function isFollowed(c){ return !!followSet()[followKey(c)]; }
+function updateFollowBtn(c,b){ const on=isFollowed(c); b.textContent=on?"✓ seguito":"★ segui"; b.className="follow"+(on?" on":""); }
+async function toggleFollow(c,b){
+  let secret=localStorage.getItem("watch_secret");
+  if(!secret){ secret=prompt("Segreto della watchlist (una volta sola):"); if(!secret) return; localStorage.setItem("watch_secret",secret); }
+  const action=isFollowed(c)?"unfollow":"follow"; b.disabled=true; b.textContent="…";
+  try{
+    const r=await fetch(DATA.watch_url.replace(/\/$/,"")+"/"+action,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({secret,ticker:c.ticker,date:c.date,market:c.market,entry:c.entry,stop:c.stop_bot,base_len:c.base_len,mansfield:c.mansfield,vol_ratio:c.vol_ratio,currency:c.currency})});
+    if(r.status===401){ alert("Segreto errato — reimpostalo."); localStorage.removeItem("watch_secret"); b.disabled=false; updateFollowBtn(c,b); return; }
+    const j=await r.json();
+    if(j&&j.ok){ const st=followSet(),k=followKey(c); if(j.following)st[k]=true; else delete st[k]; localStorage.setItem("followed",JSON.stringify(st)); }
+    else alert("Errore: "+((j&&j.error)||"sconosciuto"));
+  }catch(e){ alert("Errore rete: "+e); }
+  b.disabled=false; updateFollowBtn(c,b);
+}
 function renderDetail(){
   const d = $("detail");
   if(!sel){d.innerHTML="";return;}
@@ -344,11 +367,13 @@ function renderDetail(){
     ["Azioni",c.shares,null],["Posizione",c.position_eur.toLocaleString(),null],
   ].map(([k,v,ok])=>`<div class="${ok===true?'pass':ok===false?'fail':''}"><b>${k}</b>
       <span class="${ok===true?'ok':ok===false?'no':''}">${v}</span></div>`).join("");
+  const fbtn = DATA.watch_url ? `<button class="follow" id="fbtn">★ segui</button>` : "";
   d.innerHTML = `<div class="card"><div class="chd">
      <span class="tk">${c.ticker}</span>${badge}
-     <span class="meta">segnale ${c.date} · ${c.weeks_ago} sett. fa · fase ${c.stage} · ${c.currency}</span></div>
+     <span class="meta">segnale ${c.date} · ${c.weeks_ago} sett. fa · fase ${c.stage} · ${c.currency}</span>${fbtn}</div>
      <div id="chart"></div><div class="kv">${kv}</div></div>`;
   drawChart(c);
+  if(DATA.watch_url && $("fbtn")){ updateFollowBtn(c, $("fbtn")); $("fbtn").onclick=()=>toggleFollow(c, $("fbtn")); }
 }
 function drawChart(c){
   const s = c.series;

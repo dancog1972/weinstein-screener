@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from datetime import date
 from pathlib import Path
 
@@ -25,8 +26,26 @@ from src.console import setup as _console_setup
 _console_setup()
 
 import pandas as pd
+import requests
 
 from src.config import load_config
+
+
+def _fetch_watchlist() -> list[dict]:
+    """La watchlist dei 'quasi' SEGUITI a mano, dal Worker Cloudflare (env
+    WATCH_URL + WATCH_SECRET). Se non configurata → lista vuota (la pagina degrada
+    ai soli pieni). Ogni voce ha già ticker/signal_date/entry/stop/... salvati
+    dalla pagina al momento del 'segui'."""
+    url, secret = os.environ.get("WATCH_URL"), os.environ.get("WATCH_SECRET")
+    if not url or not secret:
+        return []
+    try:
+        r = requests.get(f"{url.rstrip('/')}/list", params={"secret": secret}, timeout=15)
+        r.raise_for_status()
+        return r.json() or []
+    except Exception as e:  # noqa: BLE001
+        print(f"  [watchlist] non disponibile: {e}")
+        return []
 
 
 def _track(root: Path, e: dict) -> dict | None:
@@ -115,8 +134,20 @@ def main() -> None:
 
     log.sort(key=lambda e: e["signal_date"], reverse=True)   # più recenti in cima
     logp.write_text(json.dumps(log, indent=2, ensure_ascii=False), encoding="utf-8")
-    _write_html(Path(args.out), log, today)
-    print(f"✓ Storico segnali pieni: {len(log)} totali ({added} nuovi) → {args.out}")
+
+    # QUASI seguiti a mano (watchlist Cloudflare, se configurata): tracciati come i
+    # pieni ma NON committati — sono la selezione VIVA, non uno storico permanente.
+    quasi = _fetch_watchlist()
+    for w in quasi:
+        perf = _track(root, w)
+        if perf:
+            w.update(perf)
+        sd = w.get("signal_date")
+        w["weeks_since"] = (pd.Timestamp(today) - pd.Timestamp(sd)).days // 7 if sd else None
+    quasi.sort(key=lambda w: w.get("signal_date") or "", reverse=True)
+
+    _write_html(Path(args.out), log, quasi, today)
+    print(f"✓ Follow-up: {len(log)} pieni ({added} nuovi) · {len(quasi)} quasi seguiti → {args.out}")
 
 
 def _pct_cell(v) -> str:
@@ -126,53 +157,63 @@ def _pct_cell(v) -> str:
     return f"<td class='n {cls}'>{v:+.1f}%</td>"
 
 
+def _num(v, d: int = 2) -> str:
+    return f"{v:.{d}f}" if isinstance(v, (int, float)) else "–"
+
+
 def _row(e: dict) -> str:
     hit = e.get("stop_hit")
     stopcell = (f"<td class='hit'>SÌ · {e.get('stop_date','')}</td>" if hit
                 else "<td class='ok2'>no</td>")
     atstop = _pct_cell(e.get("pct_at_stop")) if hit else "<td class='n'>–</td>"
-    return (f"<tr><td class='tk'>{e['ticker']}</td>"
-            f"<td><span class='mk'>{e['market']}</span></td>"
-            f"<td>{e['signal_date']}</td><td class='n'>{e.get('weeks_since','–')}</td>"
-            f"<td class='n'>{e['entry']:.2f}</td><td class='n stop'>{e['stop']:.2f}</td>"
+    return (f"<tr><td class='tk'>{e.get('ticker','')}</td>"
+            f"<td><span class='mk'>{e.get('market','')}</span></td>"
+            f"<td>{e.get('signal_date','')}</td><td class='n'>{e.get('weeks_since','–')}</td>"
+            f"<td class='n'>{_num(e.get('entry'))}</td><td class='n stop'>{_num(e.get('stop'))}</td>"
             f"{stopcell}{atstop}"
             f"<td class='n'>{e.get('last_price','–')}</td>{_pct_cell(e.get('pct_since'))}"
-            f"<td class='n'>{e['mansfield']:.1f}</td><td>{e['currency']}</td></tr>")
+            f"<td class='n'>{_num(e.get('mansfield'), 1)}</td><td>{e.get('currency','')}</td></tr>")
 
 
-def _write_html(path: Path, log: list[dict], today: str) -> None:
-    rows = "".join(_row(e) for e in log) or \
-        "<tr><td colspan='12' class='none'>Ancora nessun segnale pieno registrato.</td></tr>"
-    html = f"""<!doctype html><meta charset="utf-8"><title>Storico segnali pieni</title>
+_HEADER = ("<tr><th>Ticker</th><th>Mkt</th><th>Settimana segnale</th><th>Sett. fa</th>"
+           "<th>Entry@segnale</th><th>Stop</th><th>Stop colpito</th><th>% allo stop</th>"
+           "<th>Prezzo ora</th><th>% da allora</th><th>Mansfield</th><th>Val.</th></tr>")
+
+
+def _table(rows: list[dict], empty: str) -> str:
+    body = "".join(_row(e) for e in rows) or f"<tr><td colspan='12' class='none'>{empty}</td></tr>"
+    return f"<table>{_HEADER}{body}</table>"
+
+
+def _write_html(path: Path, pieni: list[dict], quasi: list[dict], today: str) -> None:
+    html = f"""<!doctype html><meta charset="utf-8"><title>Follow-up segnali</title>
 <style>
  body{{background:#151b21;color:#d7e0e6;font:13px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;padding:24px}}
  h1{{font-size:19px;margin:0 0 4px}} .sub{{color:#7f8c98;font-size:12px;margin-bottom:14px}}
+ h2{{font-size:14px;margin:22px 0 4px}} h2 small{{color:#7f8c98;font-weight:400;font-size:11px}}
+ .cnt{{background:#233240;border-radius:9px;padding:0 7px;font-size:11px;color:#d7e0e6}}
  a{{color:#6fe3a1;text-decoration:none}} a:hover{{text-decoration:underline}}
- table{{border-collapse:collapse;width:100%;font-size:12px;margin-top:8px}}
+ table{{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}}
  th{{text-align:left;color:#7f8c98;font-weight:600;border-bottom:1px solid #2b353f;padding:7px 8px;white-space:nowrap}}
  td{{border-bottom:1px solid #222c35;padding:7px 8px}} tr:hover td{{background:#1a2128}}
  .n{{text-align:right;font-family:SF Mono,Consolas,monospace}} .tk{{font-weight:600;color:#6fe3a1}}
  .stop{{color:#d6604d}} .pos{{color:#6fe3a1}} .neg{{color:#d6604d}}
  .hit{{color:#d6604d;font-weight:600}} .ok2{{color:#7f8c98}}
- .none{{text-align:center;color:#7f8c98;padding:24px}}
+ .none{{text-align:center;color:#7f8c98;padding:20px}}
  .mk{{background:#233240;color:#8fb8d8;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}}
- .foot{{color:#7f8c98;font-size:11px;margin-top:16px;line-height:1.7}}
+ .foot{{color:#7f8c98;font-size:11px;margin-top:18px;line-height:1.7}}
 </style>
-<h1>Storico segnali pieni</h1>
-<div class="sub">Aggiornato {today} · {len(log)} segnali registrati · <a href="index.html">← torna allo screener</a></div>
-<table>
-<tr><th>Ticker</th><th>Mkt</th><th>Settimana segnale</th><th>Sett. fa</th><th>Entry@segnale</th>
-<th>Stop</th><th>Stop colpito</th><th>% allo stop</th><th>Prezzo ora</th><th>% da allora</th><th>Mansfield</th><th>Val.</th></tr>
-{rows}
-</table>
+<h1>Follow-up segnali</h1>
+<div class="sub">Aggiornato {today} · <a href="index.html">← torna allo screener</a></div>
+<h2>Segnali PIENI <span class="cnt">{len(pieni)}</span> <small>automatici, dallo screener</small></h2>
+{_table(pieni, "Ancora nessun segnale pieno registrato.")}
+<h2>QUASI seguiti <span class="cnt">{len(quasi)}</span> <small>tua selezione — nello screener apri un candidato e clicca ★ segui</small></h2>
+{_table(quasi, "Nessun quasi seguito. Nello screener apri un candidato e clicca ★ segui.")}
 <div class="foot">
-Ogni segnale <b>pieno</b> viene registrato con la settimana in cui è comparso. Due misure DIVERSE:<br>
-&bull; <b>Stop colpito</b> = una <i>chiusura settimanale</i> è scesa sotto lo stop iniziale (regola weekly del
-metodo). <b>% allo stop</b> = la performance <i>congelata</i> in quel momento (quanto avresti perso entrando
-e venendo stoppato).<br>
-&bull; <b>% da allora</b> invece CORRE sempre: dov'è il titolo ORA rispetto al segnale, anche se lo stop era
-già scattato → così vedi se dopo lo stop ha recuperato (o se non entrare affatto).<br>
-Non è un portafoglio (qui non si compra), è un <i>diario</i> dei segnali. I più recenti in cima.
+Due misure per riga: <b>Stop colpito</b> / <b>% allo stop</b> = se e con che perdita una chiusura settimanale è
+scesa sotto lo stop iniziale (congelata). <b>% da allora</b> = dov'è il titolo ORA rispetto al segnale (corre
+sempre, anche dopo lo stop → utile per un'entrata tardiva). Non è un portafoglio: qui non si compra. I PIENI si
+accumulano da soli; i QUASI sono la tua watchlist viva (togli il ★ nello screener per smettere di seguirli).
 </div>"""
     path.write_text(html, encoding="utf-8")
 
