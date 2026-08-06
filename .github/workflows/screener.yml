@@ -78,12 +78,18 @@ jobs:
           WATCH_URL: ${{ secrets.WATCH_URL }}       # abilita i bottoni ★ segui
         run: python build_page.py
 
+      - name: Genera la pagina del metodo
+        env:
+          EODHD_API_KEY: cache-only
+        run: python build_method.py
+
       - name: Prepara il sito
         run: |
           mkdir -p _site
           cp output/screener_app.html _site/index.html
           cp output/screener.html _site/report.html
           cp output/signals.html _site/signals.html
+          cp output/metodo.html _site/metodo.html
           cp output/screener.json output/screener_app_data.json _site/ 2>/dev/null || true
 
       - uses: actions/upload-pages-artifact@v3

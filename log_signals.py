@@ -185,7 +185,43 @@ def _table(rows: list[dict], empty: str) -> str:
     return f"<table>{_HEADER}{body}</table>"
 
 
+_LIVE_JS = r"""
+function pctc(v){ if(v==null) return "<td class='n'>–</td>"; const c=v>0?'pos':v<0?'neg':''; return `<td class='n ${c}'>${v>0?'+':''}${(+v).toFixed(1)}%</td>`; }
+function n2(v,d){ return (typeof v==='number')?(+v).toFixed(d==null?2:d):'–'; }
+function qrow(e){
+  const t=TRACKED[e.ticker+"|"+e.signal_date]||{}, hit=t.stop_hit;
+  const sc=hit?`<td class='hit'>SÌ · ${t.stop_date||''}</td>`:"<td class='ok2'>no</td>";
+  const as=hit?pctc(t.pct_at_stop):"<td class='n'>–</td>";
+  const lp=(t.last_price!=null)?t.last_price:"<i>in attesa</i>";
+  return `<tr><td class='tk'>${e.ticker}</td><td><span class='mk'>${e.market||''}</span></td>`
+    +`<td>${e.signal_date}</td><td class='n'>${t.weeks_since!=null?t.weeks_since:'–'}</td>`
+    +`<td class='n'>${n2(e.entry)}</td><td class='n stop'>${n2(e.stop)}</td>${sc}${as}`
+    +`<td class='n'>${lp}</td>${pctc(t.pct_since)}<td class='n'>${n2(e.mansfield,1)}</td><td>${e.currency||''}</td></tr>`;
+}
+async function loadWatch(){
+  if(!WATCH_URL) return;
+  const s=localStorage.getItem("watch_secret"); if(!s) return;   // niente segreto → resta lo snapshot del job
+  try{
+    const r=await fetch(WATCH_URL.replace(/\/$/,"")+"/list?secret="+encodeURIComponent(s));
+    if(!r.ok) return;
+    const l=await r.json(); l.sort((a,b)=>(b.signal_date||"").localeCompare(a.signal_date||""));
+    document.getElementById("quasi").innerHTML = l.length? l.map(qrow).join("") : "<tr><td colspan='12' class='none'>Nessun quasi seguito. Nello screener apri un candidato e clicca ★ segui.</td></tr>";
+    document.getElementById("qcnt").textContent=l.length;
+  }catch(e){}
+}
+loadWatch();
+"""
+
+
 def _write_html(path: Path, pieni: list[dict], quasi: list[dict], today: str) -> None:
+    watch_url = os.environ.get("WATCH_URL", "")
+    tracked = {f"{e.get('ticker')}|{e.get('signal_date')}": {
+        "weeks_since": e.get("weeks_since"), "last_price": e.get("last_price"),
+        "pct_since": e.get("pct_since"), "stop_hit": e.get("stop_hit"),
+        "stop_date": e.get("stop_date"), "pct_at_stop": e.get("pct_at_stop")} for e in quasi}
+    quasi_rows = "".join(_row(e) for e in quasi) or \
+        "<tr><td colspan='12' class='none'>Nessun quasi seguito. Nello screener apri un candidato e clicca ★ segui.</td></tr>"
+    script = (f"const WATCH_URL={json.dumps(watch_url)}, TRACKED={json.dumps(tracked)};\n" + _LIVE_JS)
     html = f"""<!doctype html><meta charset="utf-8"><title>Follow-up segnali</title>
 <style>
  body{{background:#151b21;color:#d7e0e6;font:13px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;padding:24px}}
@@ -199,22 +235,24 @@ def _write_html(path: Path, pieni: list[dict], quasi: list[dict], today: str) ->
  .n{{text-align:right;font-family:SF Mono,Consolas,monospace}} .tk{{font-weight:600;color:#6fe3a1}}
  .stop{{color:#d6604d}} .pos{{color:#6fe3a1}} .neg{{color:#d6604d}}
  .hit{{color:#d6604d;font-weight:600}} .ok2{{color:#7f8c98}}
- .none{{text-align:center;color:#7f8c98;padding:20px}}
+ .none{{text-align:center;color:#7f8c98;padding:20px}} i{{color:#7f8c98}}
  .mk{{background:#233240;color:#8fb8d8;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}}
  .foot{{color:#7f8c98;font-size:11px;margin-top:18px;line-height:1.7}}
 </style>
 <h1>Follow-up segnali</h1>
-<div class="sub">Aggiornato {today} · <a href="index.html">← torna allo screener</a></div>
+<div class="sub">Aggiornato {today} · <a href="metodo.html">il metodo</a> · <a href="index.html">← torna allo screener</a></div>
 <h2>Segnali PIENI <span class="cnt">{len(pieni)}</span> <small>automatici, dallo screener</small></h2>
 {_table(pieni, "Ancora nessun segnale pieno registrato.")}
-<h2>QUASI seguiti <span class="cnt">{len(quasi)}</span> <small>tua selezione — nello screener apri un candidato e clicca ★ segui</small></h2>
-{_table(quasi, "Nessun quasi seguito. Nello screener apri un candidato e clicca ★ segui.")}
+<h2>QUASI seguiti <span class="cnt" id="qcnt">{len(quasi)}</span> <small>tua selezione — live dalla watchlist (★ nello screener)</small></h2>
+<table>{_HEADER}<tbody id="quasi">{quasi_rows}</tbody></table>
 <div class="foot">
 Due misure per riga: <b>Stop colpito</b> / <b>% allo stop</b> = se e con che perdita una chiusura settimanale è
 scesa sotto lo stop iniziale (congelata). <b>% da allora</b> = dov'è il titolo ORA rispetto al segnale (corre
-sempre, anche dopo lo stop → utile per un'entrata tardiva). Non è un portafoglio: qui non si compra. I PIENI si
-accumulano da soli; i QUASI sono la tua watchlist viva (togli il ★ nello screener per smettere di seguirli).
-</div>"""
+sempre, anche dopo lo stop → utile per un'entrata tardiva). Non è un portafoglio: qui non si compra.<br>
+I PIENI si accumulano da soli. I QUASI sono <b>live</b>: appena segui un titolo nello screener compare qui
+subito (entry/stop); le performance si popolano al primo aggiornamento del job.
+</div>
+<script>{script}</script>"""
     path.write_text(html, encoding="utf-8")
 
 
