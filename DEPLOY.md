@@ -22,8 +22,11 @@ gh repo create weinstein-screener --public --source=. --push
 Repo → Settings → Secrets and variables → Actions → New repository secret:
 - **Name**: `EODHD_API_KEY`  ·  **Value**: la chiave NUOVA
 
-### 4. Abilita Pages
-Repo → Settings → Pages → **Source: GitHub Actions**.
+### 4. Abilita Pages (dopo il primo run)
+Il workflow pubblica su un branch **`gh-pages`** (creato al primo run). Quindi:
+lancia prima il workflow una volta, poi Repo → Settings → Pages → **Source:
+Deploy from a branch** → Branch **`gh-pages`** / **(root)** → Save.
+(Il branch `gh-pages` NON si tocca a mano: lo riscrive il job a ogni run.)
 
 ### 5. Carica la cache iniziale (dal tuo PC, con la cache piena)
 ```bash

@@ -8,9 +8,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write        # per aggiornare il Release asset della cache
-  pages: write           # per pubblicare su GitHub Pages
-  id-token: write        # richiesto da deploy-pages
+  contents: write        # per il branch gh-pages, il Release asset della cache e il commit del diario
 
 concurrency:
   group: screener
@@ -20,9 +18,6 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 120   # lo screener ricalcola il settimanale di ~7.000 titoli: lento sul runner free
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -92,19 +87,19 @@ jobs:
           cp output/metodo.html _site/metodo.html
           cp output/screener.json output/screener_app_data.json _site/ 2>/dev/null || true
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Pubblica su Pages (branch gh-pages)
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: _site
-
-      - id: deploy
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
 
       - name: Recap Telegram (settimanale)
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SITE_URL: ${{ steps.deploy.outputs.page_url }}
+          SITE_URL: "https://dancog1972.github.io/weinstein-screener/"
           WATCH_URL: ${{ secrets.WATCH_URL }}
           WATCH_SECRET: ${{ secrets.WATCH_SECRET }}
         run: python notify.py
