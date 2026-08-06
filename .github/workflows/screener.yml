@@ -99,12 +99,14 @@ jobs:
       - id: deploy
         uses: actions/deploy-pages@v4
 
-      - name: Notifica Telegram (nuovi pieni)
+      - name: Recap Telegram (settimanale)
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SITE_URL: ${{ steps.deploy.outputs.page_url }}
+          WATCH_URL: ${{ secrets.WATCH_URL }}
+          WATCH_SECRET: ${{ secrets.WATCH_SECRET }}
         run: python notify.py
 
       - name: Risalva la cache dati (Release asset)

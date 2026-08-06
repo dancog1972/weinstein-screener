@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Notifica Telegram: a fine run, se sono comparsi NUOVI segnali PIENI (aggiunti
-al log in questa esecuzione), manda la lista + il link alla pagina. Solo i nuovi,
-così non ti arriva lo stesso segnale ogni settimana.
+"""Notifica Telegram: a fine run manda SEMPRE un "Weekly Summary" con lo stato
+(nuovi segnali pieni o "nessuno"), il recap del follow-up (pieni totali + quasi
+seguiti) e i link a screener e follow-up.
 
-Env (da GitHub Secrets): TELEGRAM_TOKEN, TELEGRAM_CHAT_ID · SITE_URL (link).
-Se i secret non ci sono → non fa nulla (degrada in silenzio).
+Env (da GitHub Secrets): TELEGRAM_TOKEN, TELEGRAM_CHAT_ID · SITE_URL (link) ·
+WATCH_URL/WATCH_SECRET (per contare i quasi seguiti, opzionale).
+Se TELEGRAM_TOKEN/CHAT_ID non ci sono → non fa nulla.
 """
 from __future__ import annotations
 
@@ -21,8 +22,21 @@ _console_setup()
 import requests
 
 
+def _watchlist_count() -> int | None:
+    """Quanti 'quasi' segui (dal Worker Cloudflare). None se non configurato."""
+    url, secret = os.environ.get("WATCH_URL"), os.environ.get("WATCH_SECRET")
+    if not url or not secret:
+        return None
+    try:
+        r = requests.get(f"{url.rstrip('/')}/list", params={"secret": secret}, timeout=15)
+        r.raise_for_status()
+        return len(r.json() or [])
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Notifica Telegram dei nuovi segnali pieni")
+    ap = argparse.ArgumentParser(description="Recap settimanale su Telegram")
     ap.add_argument("--log", default="signals_log.json")
     args = ap.parse_args()
 
@@ -30,33 +44,38 @@ def main() -> None:
     if not token or not chat:
         print("  [telegram] TELEGRAM_TOKEN/CHAT_ID non impostati — salto")
         return
+
     logp = Path(args.log)
-    if not logp.exists():
-        print("  [telegram] signals_log.json assente — salto")
-        return
-
-    log = json.loads(logp.read_text(encoding="utf-8"))
+    log = json.loads(logp.read_text(encoding="utf-8")) if logp.exists() else []
     today = date.today().isoformat()
-    new = [e for e in log if e.get("first_logged") == today]   # aggiunti in QUESTO run
-    if not new:
-        print("  [telegram] nessun nuovo segnale pieno — nessuna notifica")
-        return
+    new = [e for e in log if e.get("first_logged") == today]   # pieni aggiunti in QUESTO run
+    n_quasi = _watchlist_count()
 
-    site = os.environ.get("SITE_URL", "").strip()
-    lines = [f"🟢 <b>Screener Weinstein</b> — {len(new)} nuovo/i segnale/i PIENO/I"]
-    for e in new[:15]:
-        lines.append(f"• <b>{e['ticker']}</b> ({e.get('market','')}) · entry {e.get('entry')} · "
-                     f"stop {e.get('stop')} · Mansfield {e.get('mansfield')}")
+    lines = [f"📊 <b>Weekly Summary</b> — {today}"]
+    if new:
+        lines.append(f"🟢 <b>{len(new)} nuovi segnali PIENI</b>:")
+        for e in new[:15]:
+            lines.append(f"• <b>{e['ticker']}</b> ({e.get('market','')}) · entry {e.get('entry')} · "
+                         f"stop {e.get('stop')} · Mans {e.get('mansfield')}")
+    else:
+        lines.append("⚪️ Nessun nuovo segnale.")
+
+    recap = f"Follow-up: <b>{len(log)}</b> pieni totali"
+    if n_quasi is not None:
+        recap += f" · <b>{n_quasi}</b> quasi seguiti"
+    lines.append(recap)
+
+    site = os.environ.get("SITE_URL", "").strip().rstrip("/")
     if site:
-        lines.append(f'👉 <a href="{site}">apri lo screener</a>')
-    text = "\n".join(lines)
+        lines.append(f'🔎 <a href="{site}/">Screener</a>  ·  📋 <a href="{site}/signals.html">Follow-up</a>')
 
+    text = "\n".join(lines)
     try:
         r = requests.post(
             f"https://api.telegram.org/bot{token}/sendMessage",
             json={"chat_id": chat, "text": text, "parse_mode": "HTML",
                   "disable_web_page_preview": True}, timeout=20)
-        print("  [telegram] notifica inviata ✓" if r.ok
+        print("  [telegram] recap inviato ✓" if r.ok
               else f"  [telegram] errore {r.status_code}: {r.text[:200]}")
     except Exception as e:  # noqa: BLE001
         print(f"  [telegram] invio fallito: {e}")
