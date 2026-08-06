@@ -80,7 +80,9 @@ def main() -> None:
 
     site = os.environ.get("SITE_URL", "").strip().rstrip("/")
     if site:
-        lines.append(f'🔎 <a href="{site}/">Screener</a>  ·  📋 <a href="{site}/signals.html">Follow-up</a>')
+        lines.append(f'🔎 <a href="{site}/">Screener</a> · '
+                     f'📋 <a href="{site}/signals.html">Follow-up</a> · '
+                     f'📖 <a href="{site}/metodo.html">Metodo</a>')
 
     text = "\n".join(lines)
     recipients = {str(chat)} | set(_subscribers())      # tu + gli iscritti (dedup)
