@@ -1,0 +1,57 @@
+<!doctype html><meta charset="utf-8"><title>Follow-up segnali</title>
+<style>
+ body{background:#151b21;color:#d7e0e6;font:13px/1.5 -apple-system,Segoe UI,sans-serif;margin:0;padding:24px}
+ h1{font-size:19px;margin:0 0 4px} .sub{color:#7f8c98;font-size:12px;margin-bottom:14px}
+ h2{font-size:14px;margin:22px 0 4px} h2 small{color:#7f8c98;font-weight:400;font-size:11px}
+ .cnt{background:#233240;border-radius:9px;padding:0 7px;font-size:11px;color:#d7e0e6}
+ a{color:#6fe3a1;text-decoration:none} a:hover{text-decoration:underline}
+ table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}
+ th{text-align:left;color:#7f8c98;font-weight:600;border-bottom:1px solid #2b353f;padding:7px 8px;white-space:nowrap}
+ td{border-bottom:1px solid #222c35;padding:7px 8px} tr:hover td{background:#1a2128}
+ .n{text-align:right;font-family:SF Mono,Consolas,monospace} .tk{font-weight:600;color:#6fe3a1}
+ .stop{color:#d6604d} .pos{color:#6fe3a1} .neg{color:#d6604d}
+ .hit{color:#d6604d;font-weight:600} .ok2{color:#7f8c98}
+ .none{text-align:center;color:#7f8c98;padding:20px} i{color:#7f8c98}
+ .mk{background:#233240;color:#8fb8d8;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}
+ .foot{color:#7f8c98;font-size:11px;margin-top:18px;line-height:1.7}
+</style>
+<h1>Follow-up segnali</h1>
+<div class="sub">Aggiornato 2026-08-06 · <a href="metodo.html">il metodo</a> · <a href="index.html">← torna allo screener</a></div>
+<h2>Segnali PIENI <span class="cnt">2</span> <small>automatici, dallo screener</small></h2>
+<table><tr><th>Ticker</th><th>Mkt</th><th>Settimana segnale</th><th>Sett. fa</th><th>Entry@segnale</th><th>Stop</th><th>Stop colpito</th><th>% allo stop</th><th>Prezzo ora</th><th>% da allora</th><th>Mansfield</th><th>Val.</th></tr><tr><td class='tk'>SAX.XETRA</td><td><span class='mk'>DE</span></td><td>2026-07-31</td><td class='n'>0</td><td class='n'>39.64</td><td class='n stop'>31.85</td><td class='ok2'>no</td><td class='n'>–</td><td class='n'>40.8</td><td class='n pos'>+2.9%</td><td class='n'>2.1</td><td>EUR</td></tr><tr><td class='tk'>ARCAD.AS</td><td><span class='mk'>AS</span></td><td>2026-07-24</td><td class='n'>1</td><td class='n'>41.40</td><td class='n stop'>31.36</td><td class='ok2'>no</td><td class='n'>–</td><td class='n'>42.06</td><td class='n pos'>+1.6%</td><td class='n'>4.3</td><td>EUR</td></tr></table>
+<h2>QUASI seguiti <span class="cnt" id="qcnt">2</span> <small>tua selezione — live dalla watchlist (★ nello screener)</small></h2>
+<table><tr><th>Ticker</th><th>Mkt</th><th>Settimana segnale</th><th>Sett. fa</th><th>Entry@segnale</th><th>Stop</th><th>Stop colpito</th><th>% allo stop</th><th>Prezzo ora</th><th>% da allora</th><th>Mansfield</th><th>Val.</th></tr><tbody id="quasi"><tr><td class='tk'>AVTR.US</td><td><span class='mk'>US</span></td><td>2026-07-31</td><td class='n'>0</td><td class='n'>13.78</td><td class='n stop'>8.97</td><td class='ok2'>no</td><td class='n'>–</td><td class='n'>13.68</td><td class='n neg'>-0.7%</td><td class='n'>17.2</td><td>USD</td></tr><tr><td class='tk'>THRM.US</td><td><span class='mk'>US</span></td><td>2026-07-24</td><td class='n'>1</td><td class='n'>42.69</td><td class='n stop'>26.46</td><td class='ok2'>no</td><td class='n'>–</td><td class='n'>43.05</td><td class='n pos'>+0.9%</td><td class='n'>15.6</td><td>USD</td></tr></tbody></table>
+<div class="foot">
+Due misure per riga: <b>Stop colpito</b> / <b>% allo stop</b> = se e con che perdita una chiusura settimanale è
+scesa sotto lo stop iniziale (congelata). <b>% da allora</b> = dov'è il titolo ORA rispetto al segnale (corre
+sempre, anche dopo lo stop → utile per un'entrata tardiva). Non è un portafoglio: qui non si compra.<br>
+I PIENI si accumulano da soli. I QUASI sono <b>live</b>: appena segui un titolo nello screener compare qui
+subito (entry/stop); le performance si popolano al primo aggiornamento del job.
+</div>
+<script>const WATCH_URL="https://weinstein-watch.myscreener.workers.dev", TRACKED={"AVTR.US|2026-07-31": {"weeks_since": 0, "last_price": 13.68, "pct_since": -0.7, "stop_hit": false, "stop_date": null, "pct_at_stop": null}, "THRM.US|2026-07-24": {"weeks_since": 1, "last_price": 43.05, "pct_since": 0.9, "stop_hit": false, "stop_date": null, "pct_at_stop": null}};
+
+function pctc(v){ if(v==null) return "<td class='n'>–</td>"; const c=v>0?'pos':v<0?'neg':''; return `<td class='n ${c}'>${v>0?'+':''}${(+v).toFixed(1)}%</td>`; }
+function n2(v,d){ return (typeof v==='number')?(+v).toFixed(d==null?2:d):'–'; }
+function qrow(e){
+  const t=TRACKED[e.ticker+"|"+e.signal_date]||{}, hit=t.stop_hit;
+  const sc=hit?`<td class='hit'>SÌ · ${t.stop_date||''}</td>`:"<td class='ok2'>no</td>";
+  const as=hit?pctc(t.pct_at_stop):"<td class='n'>–</td>";
+  const lp=(t.last_price!=null)?t.last_price:"<i>in attesa</i>";
+  return `<tr><td class='tk'>${e.ticker}</td><td><span class='mk'>${e.market||''}</span></td>`
+    +`<td>${e.signal_date}</td><td class='n'>${t.weeks_since!=null?t.weeks_since:'–'}</td>`
+    +`<td class='n'>${n2(e.entry)}</td><td class='n stop'>${n2(e.stop)}</td>${sc}${as}`
+    +`<td class='n'>${lp}</td>${pctc(t.pct_since)}<td class='n'>${n2(e.mansfield,1)}</td><td>${e.currency||''}</td></tr>`;
+}
+async function loadWatch(){
+  if(!WATCH_URL) return;
+  const s=localStorage.getItem("watch_secret"); if(!s) return;   // niente segreto → resta lo snapshot del job
+  try{
+    const r=await fetch(WATCH_URL.replace(/\/$/,"")+"/list?secret="+encodeURIComponent(s));
+    if(!r.ok) return;
+    const l=await r.json(); l.sort((a,b)=>(b.signal_date||"").localeCompare(a.signal_date||""));
+    document.getElementById("quasi").innerHTML = l.length? l.map(qrow).join("") : "<tr><td colspan='12' class='none'>Nessun quasi seguito. Nello screener apri un candidato e clicca ★ segui.</td></tr>";
+    document.getElementById("qcnt").textContent=l.length;
+  }catch(e){}
+}
+loadWatch();
+</script>
