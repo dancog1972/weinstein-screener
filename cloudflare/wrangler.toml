@@ -7,4 +7,4 @@ compatibility_date = "2024-11-01"
 [[d1_databases]]
 binding = "DB"                 # nel Worker è env.DB
 database_name = "weinstein-watch"
-database_id = "INCOLLA_QUI_DOPO_wrangler_d1_create"
+database_id = "f5b3fb82-d259-4a09-9238-6f9ff6c54dcc"
