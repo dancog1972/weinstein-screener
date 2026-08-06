@@ -102,14 +102,17 @@ def main() -> None:
             bench_wk[sym] = enrich_weekly(to_weekly(d), None, st["ma_weeks"], st["slope_lookback"])
         return bench_wk[sym]
 
-    # I candidati arrivano già ordinati dallo screener (pieni prima, poi per forza
-    # relativa). Carico il GRAFICO solo per i primi `series-cap` (i più rilevanti):
-    # gli altri restano righe filtrabili dagli slider, senza grafico. Serve a non
-    # imbarcare centinaia di serie nella pagina.
+    # Carico il GRAFICO solo per `series-cap` candidati (per non imbarcare centinaia
+    # di serie). PRIORITÀ ai più "vicini": meno filtri falliti prima, poi per forza
+    # relativa → i candidati della vista di default (fail ≤1) hanno SEMPRE il grafico;
+    # restano senza solo i quasi profondi del superset (slider a 3-4).
     cap = args.series_cap
-    print(f"Estraggo le serie per i primi {min(cap, len(cands))}/{len(cands)} candidati...")
+    prio = sorted(range(len(cands)),
+                  key=lambda i: (len(cands[i].get("fails", [])), -cands[i].get("mansfield", 0)))
+    charted = set(prio[:cap])
+    print(f"Estraggo le serie per {min(cap, len(cands))}/{len(cands)} candidati (i più vicini)...")
     for i, c in enumerate(cands):
-        if i < cap:
+        if i in charted:
             try:
                 bench = get_bench(markets[c["market"]]["benchmark"])
                 d = store.get_with_warmup(c["ticker"], start, end)
