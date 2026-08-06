@@ -558,3 +558,8 @@ niente breakout da notizia (&gt;{s.get('max_breakout_stretch',0)*100:.0f}% sopra
 
 if __name__ == "__main__":
     main()
+    import os
+    import sys
+    sys.stdout.flush()          # pyarrow lascia thread → uscita forzata a lavoro finito
+    sys.stderr.flush()
+    os._exit(0)

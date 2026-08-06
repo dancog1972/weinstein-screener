@@ -179,3 +179,8 @@ Non è un portafoglio (qui non si compra), è un <i>diario</i> dei segnali. I pi
 
 if __name__ == "__main__":
     main()
+    import os
+    import sys
+    sys.stdout.flush()          # pyarrow lascia thread → uscita forzata a lavoro finito
+    sys.stderr.flush()
+    os._exit(0)

@@ -203,3 +203,11 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    # pyarrow può lasciare thread in background che bloccano la chiusura
+    # dell'interprete su alcuni runner → il processo resta APPESO a lavoro finito
+    # (le scritture su disco in main() sono già concluse). Uscita forzata pulita.
+    import os
+    import sys
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
