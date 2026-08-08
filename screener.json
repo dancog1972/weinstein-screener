@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-08-06 22:27",
+    "generated": "2026-08-08 07:47",
     "markets": [
       {
         "name": "US",
@@ -9,7 +9,7 @@
         "stage": 2,
         "stage_name": "Advance",
         "universe": 5856,
-        "skipped": 1400,
+        "skipped": 1323,
         "data_through": "2026-08-07"
       },
       {
@@ -19,7 +19,7 @@
         "stage": 2,
         "stage_name": "Advance",
         "universe": 687,
-        "skipped": 30,
+        "skipped": 29,
         "data_through": "2026-08-07"
       },
       {
@@ -64,9 +64,9 @@
       }
     ],
     "weeks_back": 6,
-    "candidates": 10,
+    "candidates": 9,
     "full": 2,
-    "near": 8,
+    "near": 7,
     "max_fails": 1,
     "superset": 400,
     "superset_fails": 4,
@@ -90,7 +90,7 @@
       "vol_ratio": 2.38,
       "mansfield": 4.3,
       "stage": "Advance",
-      "last_close": 42.06,
+      "last_close": 43.52,
       "market": "AS",
       "currency": "EUR"
     },
@@ -111,7 +111,7 @@
       "vol_ratio": 2.78,
       "mansfield": 2.1,
       "stage": "Advance",
-      "last_close": 40.8,
+      "last_close": 40.86,
       "market": "DE",
       "currency": "EUR"
     },
@@ -134,7 +134,7 @@
       "vol_ratio": 5.76,
       "mansfield": 18.1,
       "stage": "Advance",
-      "last_close": 22.0,
+      "last_close": 19.35,
       "market": "US",
       "currency": "USD"
     },
@@ -157,7 +157,7 @@
       "vol_ratio": 2.42,
       "mansfield": 17.2,
       "stage": "Base",
-      "last_close": 13.68,
+      "last_close": 13.59,
       "market": "US",
       "currency": "USD"
     },
@@ -169,10 +169,10 @@
       "ticker": "LAD.US",
       "date": "2026-07-31",
       "weeks_ago": 1,
-      "entry": 385.42,
-      "stop_bot": 277.69,
+      "entry": 384.7,
+      "stop_bot": 277.18,
       "risk_pct": 28.0,
-      "stop_pivot": 283.36,
+      "stop_pivot": 282.83,
       "shares": 9,
       "position_eur": 3577,
       "base_len": 7,
@@ -180,7 +180,7 @@
       "vol_ratio": 3.03,
       "mansfield": 15.6,
       "stage": "Base",
-      "last_close": 370.99,
+      "last_close": 375.63,
       "market": "US",
       "currency": "USD"
     },
@@ -203,7 +203,7 @@
       "vol_ratio": 2.29,
       "mansfield": 15.6,
       "stage": "Base",
-      "last_close": 43.05,
+      "last_close": 41.26,
       "market": "US",
       "currency": "USD"
     },
@@ -226,7 +226,7 @@
       "vol_ratio": 4.31,
       "mansfield": 10.5,
       "stage": "Advance",
-      "last_close": 74.0,
+      "last_close": 74.2,
       "market": "FR",
       "currency": "EUR"
     },
@@ -249,32 +249,9 @@
       "vol_ratio": 3.57,
       "mansfield": 2.5,
       "stage": "Advance",
-      "last_close": 22.15,
+      "last_close": 22.5,
       "market": "DE",
       "currency": "EUR"
-    },
-    {
-      "kind": "quasi",
-      "fails": [
-        "weak volume"
-      ],
-      "ticker": "ESNT.US",
-      "date": "2026-07-17",
-      "weeks_ago": 3,
-      "entry": 66.71,
-      "stop_bot": 54.23,
-      "risk_pct": 18.7,
-      "stop_pivot": 55.34,
-      "shares": 80,
-      "position_eur": 5346,
-      "base_len": 13,
-      "base_depth_pct": 18.7,
-      "vol_ratio": 0.62,
-      "mansfield": 0.4,
-      "stage": "Base",
-      "last_close": 66.67,
-      "market": "US",
-      "currency": "USD"
     },
     {
       "kind": "quasi",
@@ -295,7 +272,7 @@
       "vol_ratio": 2.94,
       "mansfield": -0.7,
       "stage": "Advance",
-      "last_close": 20.47,
+      "last_close": 20.35,
       "market": "US",
       "currency": "USD"
     }
