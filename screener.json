@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-08-08 07:47",
+    "generated": "2026-08-15 07:31",
     "markets": [
       {
         "name": "US",
@@ -9,8 +9,8 @@
         "stage": 2,
         "stage_name": "Advance",
         "universe": 5856,
-        "skipped": 1323,
-        "data_through": "2026-08-07"
+        "skipped": 1314,
+        "data_through": "2026-08-14"
       },
       {
         "name": "DE",
@@ -20,7 +20,7 @@
         "stage_name": "Advance",
         "universe": 687,
         "skipped": 29,
-        "data_through": "2026-08-07"
+        "data_through": "2026-08-14"
       },
       {
         "name": "FR",
@@ -30,7 +30,7 @@
         "stage_name": "Advance",
         "universe": 490,
         "skipped": 6,
-        "data_through": "2026-08-07"
+        "data_through": "2026-08-14"
       },
       {
         "name": "AS",
@@ -40,7 +40,7 @@
         "stage_name": "Advance",
         "universe": 92,
         "skipped": 5,
-        "data_through": "2026-08-07"
+        "data_through": "2026-08-14"
       },
       {
         "name": "BR",
@@ -50,7 +50,7 @@
         "stage_name": "Advance",
         "universe": 108,
         "skipped": 2,
-        "data_through": "2026-08-07"
+        "data_through": "2026-08-14"
       },
       {
         "name": "LS",
@@ -60,13 +60,13 @@
         "stage_name": "Advance",
         "universe": 35,
         "skipped": 0,
-        "data_through": "2026-08-07"
+        "data_through": "2026-08-14"
       }
     ],
     "weeks_back": 6,
-    "candidates": 9,
+    "candidates": 14,
     "full": 2,
-    "near": 7,
+    "near": 12,
     "max_fails": 1,
     "superset": 400,
     "superset_fails": 4,
@@ -78,7 +78,7 @@
       "fails": [],
       "ticker": "ARCAD.AS",
       "date": "2026-07-24",
-      "weeks_ago": 2,
+      "weeks_ago": 3,
       "entry": 41.4,
       "stop_bot": 31.36,
       "risk_pct": 24.3,
@@ -90,7 +90,7 @@
       "vol_ratio": 2.38,
       "mansfield": 4.3,
       "stage": "Advance",
-      "last_close": 43.52,
+      "last_close": 43.38,
       "market": "AS",
       "currency": "EUR"
     },
@@ -99,7 +99,7 @@
       "fails": [],
       "ticker": "SAX.XETRA",
       "date": "2026-07-31",
-      "weeks_ago": 1,
+      "weeks_ago": 2,
       "entry": 39.64,
       "stop_bot": 31.85,
       "risk_pct": 19.7,
@@ -111,9 +111,32 @@
       "vol_ratio": 2.78,
       "mansfield": 2.1,
       "stage": "Advance",
-      "last_close": 40.86,
+      "last_close": 40.54,
       "market": "DE",
       "currency": "EUR"
+    },
+    {
+      "kind": "quasi",
+      "fails": [
+        "base too deep"
+      ],
+      "ticker": "HRB.US",
+      "date": "2026-08-14",
+      "weeks_ago": 0,
+      "entry": 53.92,
+      "stop_bot": 32.89,
+      "risk_pct": 39.0,
+      "stop_pivot": 33.56,
+      "shares": 47,
+      "position_eur": 2563,
+      "base_len": 12,
+      "base_depth_pct": 41.0,
+      "vol_ratio": 2.38,
+      "mansfield": 19.1,
+      "stage": "Advance",
+      "last_close": 53.92,
+      "market": "US",
+      "currency": "USD"
     },
     {
       "kind": "quasi",
@@ -122,7 +145,7 @@
       ],
       "ticker": "PHOE.US",
       "date": "2026-07-10",
-      "weeks_ago": 4,
+      "weeks_ago": 5,
       "entry": 21.6,
       "stop_bot": 12.25,
       "risk_pct": 43.3,
@@ -134,7 +157,7 @@
       "vol_ratio": 5.76,
       "mansfield": 18.1,
       "stage": "Advance",
-      "last_close": 19.35,
+      "last_close": 22.3,
       "market": "US",
       "currency": "USD"
     },
@@ -145,7 +168,7 @@
       ],
       "ticker": "AVTR.US",
       "date": "2026-07-31",
-      "weeks_ago": 1,
+      "weeks_ago": 2,
       "entry": 13.78,
       "stop_bot": 8.97,
       "risk_pct": 34.9,
@@ -157,7 +180,7 @@
       "vol_ratio": 2.42,
       "mansfield": 17.2,
       "stage": "Base",
-      "last_close": 13.59,
+      "last_close": 13.66,
       "market": "US",
       "currency": "USD"
     },
@@ -168,7 +191,7 @@
       ],
       "ticker": "LAD.US",
       "date": "2026-07-31",
-      "weeks_ago": 1,
+      "weeks_ago": 2,
       "entry": 384.7,
       "stop_bot": 277.18,
       "risk_pct": 28.0,
@@ -180,7 +203,7 @@
       "vol_ratio": 3.03,
       "mansfield": 15.6,
       "stage": "Base",
-      "last_close": 375.63,
+      "last_close": 377.55,
       "market": "US",
       "currency": "USD"
     },
@@ -191,7 +214,7 @@
       ],
       "ticker": "THRM.US",
       "date": "2026-07-24",
-      "weeks_ago": 2,
+      "weeks_ago": 3,
       "entry": 42.69,
       "stop_bot": 26.46,
       "risk_pct": 38.0,
@@ -203,7 +226,53 @@
       "vol_ratio": 2.29,
       "mansfield": 15.6,
       "stage": "Base",
-      "last_close": 41.26,
+      "last_close": 44.0,
+      "market": "US",
+      "currency": "USD"
+    },
+    {
+      "kind": "quasi",
+      "fails": [
+        "base too deep"
+      ],
+      "ticker": "NMAX.US",
+      "date": "2026-08-14",
+      "weeks_ago": 0,
+      "entry": 10.87,
+      "stop_bot": 7.35,
+      "risk_pct": 32.4,
+      "stop_pivot": 7.5,
+      "shares": 284,
+      "position_eur": 3088,
+      "base_len": 12,
+      "base_depth_pct": 54.3,
+      "vol_ratio": 2.77,
+      "mansfield": 11.8,
+      "stage": "Advance",
+      "last_close": 10.87,
+      "market": "US",
+      "currency": "USD"
+    },
+    {
+      "kind": "quasi",
+      "fails": [
+        "base too short"
+      ],
+      "ticker": "AII.US",
+      "date": "2026-08-14",
+      "weeks_ago": 0,
+      "entry": 23.99,
+      "stop_bot": 17.15,
+      "risk_pct": 28.5,
+      "stop_pivot": 17.5,
+      "shares": 146,
+      "position_eur": 3507,
+      "base_len": 7,
+      "base_depth_pct": 26.9,
+      "vol_ratio": 2.46,
+      "mansfield": 10.7,
+      "stage": "Advance",
+      "last_close": 23.99,
       "market": "US",
       "currency": "USD"
     },
@@ -214,7 +283,7 @@
       ],
       "ticker": "ARG.PA",
       "date": "2026-07-24",
-      "weeks_ago": 2,
+      "weeks_ago": 3,
       "entry": 75.2,
       "stop_bot": 57.13,
       "risk_pct": 24.0,
@@ -226,7 +295,7 @@
       "vol_ratio": 4.31,
       "mansfield": 10.5,
       "stage": "Advance",
-      "last_close": 74.2,
+      "last_close": 72.9,
       "market": "FR",
       "currency": "EUR"
     },
@@ -237,7 +306,7 @@
       ],
       "ticker": "1SXP.XETRA",
       "date": "2026-07-10",
-      "weeks_ago": 4,
+      "weeks_ago": 5,
       "entry": 20.2,
       "stop_bot": 15.58,
       "risk_pct": 22.9,
@@ -249,9 +318,32 @@
       "vol_ratio": 3.57,
       "mansfield": 2.5,
       "stage": "Advance",
-      "last_close": 22.5,
+      "last_close": 21.95,
       "market": "DE",
       "currency": "EUR"
+    },
+    {
+      "kind": "quasi",
+      "fails": [
+        "base too short"
+      ],
+      "ticker": "RUM.US",
+      "date": "2026-08-14",
+      "weeks_ago": 0,
+      "entry": 7.46,
+      "stop_bot": 5.36,
+      "risk_pct": 28.1,
+      "stop_pivot": 5.47,
+      "shares": 476,
+      "position_eur": 3553,
+      "base_len": 1,
+      "base_depth_pct": 12.0,
+      "vol_ratio": 3.01,
+      "mansfield": 1.0,
+      "stage": "Base",
+      "last_close": 7.46,
+      "market": "US",
+      "currency": "USD"
     },
     {
       "kind": "quasi",
@@ -260,7 +352,7 @@
       ],
       "ticker": "FDUS.US",
       "date": "2026-07-10",
-      "weeks_ago": 4,
+      "weeks_ago": 5,
       "entry": 20.21,
       "stop_bot": 17.29,
       "risk_pct": 14.5,
@@ -272,7 +364,30 @@
       "vol_ratio": 2.94,
       "mansfield": -0.7,
       "stage": "Advance",
-      "last_close": 20.35,
+      "last_close": 19.59,
+      "market": "US",
+      "currency": "USD"
+    },
+    {
+      "kind": "quasi",
+      "fails": [
+        "Mansfield < min"
+      ],
+      "ticker": "RNW.US",
+      "date": "2026-08-14",
+      "weeks_ago": 0,
+      "entry": 6.81,
+      "stop_bot": 5.73,
+      "risk_pct": 15.8,
+      "stop_pivot": 5.85,
+      "shares": 928,
+      "position_eur": 6323,
+      "base_len": 12,
+      "base_depth_pct": 23.6,
+      "vol_ratio": 6.46,
+      "mansfield": -4.1,
+      "stage": "Advance",
+      "last_close": 6.81,
       "market": "US",
       "currency": "USD"
     }
