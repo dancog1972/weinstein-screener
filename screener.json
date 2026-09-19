@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-09-12 11:28",
+    "generated": "2026-09-19 11:51",
     "markets": [
       {
         "name": "US",
@@ -9,8 +9,8 @@
         "stage": 2,
         "stage_name": "Advance",
         "universe": 5856,
-        "skipped": 1277,
-        "data_through": "2026-09-11"
+        "skipped": 1269,
+        "data_through": "2026-09-18"
       },
       {
         "name": "DE",
@@ -20,7 +20,7 @@
         "stage_name": "Advance",
         "universe": 687,
         "skipped": 31,
-        "data_through": "2026-09-11"
+        "data_through": "2026-09-18"
       },
       {
         "name": "FR",
@@ -29,8 +29,8 @@
         "stage": 2,
         "stage_name": "Advance",
         "universe": 490,
-        "skipped": 5,
-        "data_through": "2026-09-11"
+        "skipped": 4,
+        "data_through": "2026-09-18"
       },
       {
         "name": "AS",
@@ -40,7 +40,7 @@
         "stage_name": "Advance",
         "universe": 92,
         "skipped": 5,
-        "data_through": "2026-09-11"
+        "data_through": "2026-09-18"
       },
       {
         "name": "BR",
@@ -50,7 +50,7 @@
         "stage_name": "Advance",
         "universe": 108,
         "skipped": 1,
-        "data_through": "2026-09-11"
+        "data_through": "2026-09-18"
       },
       {
         "name": "LS",
@@ -60,15 +60,15 @@
         "stage_name": "Advance",
         "universe": 35,
         "skipped": 0,
-        "data_through": "2026-09-11"
+        "data_through": "2026-09-18"
       }
     ],
     "weeks_back": 6,
-    "candidates": 9,
+    "candidates": 7,
     "full": 1,
-    "near": 8,
+    "near": 6,
     "max_fails": 1,
-    "superset": 400,
+    "superset": 331,
     "superset_fails": 4,
     "sector_active": false
   },
@@ -78,7 +78,7 @@
       "fails": [],
       "ticker": "WAC.XETRA",
       "date": "2026-08-28",
-      "weeks_ago": 2,
+      "weeks_ago": 3,
       "entry": 23.1,
       "stop_bot": 17.74,
       "risk_pct": 23.2,
@@ -90,7 +90,7 @@
       "vol_ratio": 2.26,
       "mansfield": 4.3,
       "stage": "Advance",
-      "last_close": 24.25,
+      "last_close": 24.05,
       "market": "DE",
       "currency": "EUR"
     },
@@ -101,7 +101,7 @@
       ],
       "ticker": "ANF.US",
       "date": "2026-08-28",
-      "weeks_ago": 2,
+      "weeks_ago": 3,
       "entry": 148.42,
       "stop_bot": 68.29,
       "risk_pct": 54.0,
@@ -113,30 +113,7 @@
       "vol_ratio": 5.85,
       "mansfield": 44.9,
       "stage": "Advance",
-      "last_close": 145.23,
-      "market": "US",
-      "currency": "USD"
-    },
-    {
-      "kind": "quasi",
-      "fails": [
-        "base too deep"
-      ],
-      "ticker": "ACVA.US",
-      "date": "2026-09-11",
-      "weeks_ago": 0,
-      "entry": 10.41,
-      "stop_bot": 6.54,
-      "risk_pct": 37.2,
-      "stop_pivot": 6.67,
-      "shares": 258,
-      "position_eur": 2687,
-      "base_len": 12,
-      "base_depth_pct": 39.6,
-      "vol_ratio": 5.81,
-      "mansfield": 34.4,
-      "stage": "Advance",
-      "last_close": 10.41,
+      "last_close": 135.76,
       "market": "US",
       "currency": "USD"
     },
@@ -147,7 +124,7 @@
       ],
       "ticker": "HRB.US",
       "date": "2026-08-14",
-      "weeks_ago": 4,
+      "weeks_ago": 5,
       "entry": 53.43,
       "stop_bot": 32.59,
       "risk_pct": 39.0,
@@ -159,7 +136,7 @@
       "vol_ratio": 2.23,
       "mansfield": 19.1,
       "stage": "Advance",
-      "last_close": 45.12,
+      "last_close": 44.25,
       "market": "US",
       "currency": "USD"
     },
@@ -170,7 +147,7 @@
       ],
       "ticker": "NMAX.US",
       "date": "2026-08-14",
-      "weeks_ago": 4,
+      "weeks_ago": 5,
       "entry": 10.87,
       "stop_bot": 7.35,
       "risk_pct": 32.4,
@@ -182,7 +159,7 @@
       "vol_ratio": 2.77,
       "mansfield": 11.8,
       "stage": "Advance",
-      "last_close": 11.39,
+      "last_close": 10.32,
       "market": "US",
       "currency": "USD"
     },
@@ -191,32 +168,9 @@
       "fails": [
         "weak volume"
       ],
-      "ticker": "SAX.XETRA",
-      "date": "2026-08-07",
-      "weeks_ago": 5,
-      "entry": 40.86,
-      "stop_bot": 31.85,
-      "risk_pct": 22.1,
-      "stop_pivot": 32.5,
-      "shares": 110,
-      "position_eur": 4534,
-      "base_len": 16,
-      "base_depth_pct": 26.5,
-      "vol_ratio": 1.41,
-      "mansfield": 4.1,
-      "stage": "Advance",
-      "last_close": 37.32,
-      "market": "DE",
-      "currency": "EUR"
-    },
-    {
-      "kind": "quasi",
-      "fails": [
-        "weak volume"
-      ],
       "ticker": "CWC.XETRA",
       "date": "2026-09-04",
-      "weeks_ago": 1,
+      "weeks_ago": 2,
       "entry": 109.4,
       "stop_bot": 91.92,
       "risk_pct": 16.0,
@@ -228,7 +182,7 @@
       "vol_ratio": 1.35,
       "mansfield": 3.4,
       "stage": "Advance",
-      "last_close": 105.4,
+      "last_close": 106.4,
       "market": "DE",
       "currency": "EUR"
     },
@@ -239,7 +193,7 @@
       ],
       "ticker": "URBN.US",
       "date": "2026-08-28",
-      "weeks_ago": 2,
+      "weeks_ago": 3,
       "entry": 81.09,
       "stop_bot": 64.39,
       "risk_pct": 20.6,
@@ -251,7 +205,7 @@
       "vol_ratio": 2.34,
       "mansfield": 3.3,
       "stage": "Advance",
-      "last_close": 78.58,
+      "last_close": 75.01,
       "market": "US",
       "currency": "USD"
     },
@@ -262,7 +216,7 @@
       ],
       "ticker": "RNW.US",
       "date": "2026-08-14",
-      "weeks_ago": 4,
+      "weeks_ago": 5,
       "entry": 6.81,
       "stop_bot": 5.73,
       "risk_pct": 15.8,
@@ -274,7 +228,7 @@
       "vol_ratio": 6.46,
       "mansfield": -4.1,
       "stage": "Advance",
-      "last_close": 6.83,
+      "last_close": 6.84,
       "market": "US",
       "currency": "USD"
     }
